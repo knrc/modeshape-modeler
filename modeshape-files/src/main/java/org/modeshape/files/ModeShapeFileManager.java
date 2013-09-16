@@ -54,7 +54,7 @@ public final class ModeShapeFileManager {
     
     private String modeShapeConfigurationPath = DEFAULT_MODESHAPE_CONFIGURATION_PATH;
     private ModeShapeEngine modeShape;
-    private Session session;
+    private Repository repository;
     
     /**
      * @return the path to the ModeShape configuration file. Default is {@value #DEFAULT_MODESHAPE_CONFIGURATION_PATH}.
@@ -68,10 +68,10 @@ public final class ModeShapeFileManager {
      * @throws ModeShapeFileManagerException
      */
     public Session session() throws ModeShapeFileManagerException {
-        if ( this.session == null ) {
-            modeShape = new ModeShapeEngine();
-            modeShape.start();
-            try {
+        try {
+            if ( modeShape == null ) {
+                modeShape = new ModeShapeEngine();
+                modeShape.start();
                 final RepositoryConfiguration config = RepositoryConfiguration.read( modeShapeConfigurationPath );
                 final Problems problems = config.validate();
                 if ( problems.hasProblems() ) {
@@ -79,19 +79,17 @@ public final class ModeShapeFileManager {
                         Logger.getLogger( getClass() ).error( problem.getMessage(), problem.getThrowable() );
                     throw problems.iterator().next().getThrowable();
                 }
-                Repository repository;
                 try {
                     repository = modeShape.getRepository( config.getName() );
                 } catch ( final NoSuchRepositoryException err ) {
                     repository = modeShape.deploy( config );
                 }
-                session = repository.login( "default" );
                 Logger.getLogger( getClass() ).info( ModeShapeFileManagerI18n.modeShapeFileManagerStarted );
-            } catch ( final Throwable e ) {
-                throw new ModeShapeFileManagerException( e );
             }
+            return repository.login( "default" );
+        } catch ( final Throwable e ) {
+            throw new ModeShapeFileManagerException( e );
         }
-        return session;
     }
     
     public void setModeShapeConfigurationPath( final String modeShapeConfigurationPath ) {
@@ -103,16 +101,15 @@ public final class ModeShapeFileManager {
      * @throws ModeShapeFileManagerException
      */
     public void stop() throws ModeShapeFileManagerException {
-        if ( session == null ) Logger.getLogger( getClass() )
-                                     .debug( "Attempt to stop ModeShape File Manager when it is already stopped" );
+        if ( modeShape == null ) Logger.getLogger( getClass() )
+                                       .debug( "Attempt to stop ModeShape File Manager when it is already stopped" );
         else {
-            session.logout();
             try {
                 modeShape.shutdown().get();
             } catch ( InterruptedException | ExecutionException e ) {
                 throw new ModeShapeFileManagerException( e );
             }
-            session = null;
+            modeShape = null;
             Logger.getLogger( getClass() ).info( ModeShapeFileManagerI18n.modeShapeFileManagerStopped );
         }
     }
@@ -120,11 +117,11 @@ public final class ModeShapeFileManager {
     /**
      * @param file
      * @param workspaceParentPath
-     * @return The node representing the imported file
+     * @return The path to the node representing the imported file
      * @throws ModeShapeFileManagerException
      */
-    public Node upload( final File file,
-                        final String workspaceParentPath ) throws ModeShapeFileManagerException {
+    public String upload( final File file,
+                          final String workspaceParentPath ) throws ModeShapeFileManagerException {
         CheckArg.isNotNull( file, "file" );
         final String path = workspaceParentPath == null ? file.getName() : workspaceParentPath.endsWith( "/" )
                                                                                                               ? workspaceParentPath
@@ -155,12 +152,14 @@ public final class ModeShapeFileManager {
                 }
             };
             observationMgr.addEventListener( listener, Sequencing.ALL, "/", true, null, null, false );
+            final Session session = session();
             final Node node = new JcrTools().uploadFile( session, path, file );
             node.addMixin( "modefm:unstructured" );
             session.save();
+            session.logout();
             if ( !latch.await( 15, TimeUnit.SECONDS ) ) Logger.getLogger( getClass() ).debug( "Timed out" );
             observationMgr.removeEventListener( listener );
-            return node;
+            return node.getPath();
         } catch ( RepositoryException | IOException | InterruptedException e ) {
             throw new ModeShapeFileManagerException( e );
         }
