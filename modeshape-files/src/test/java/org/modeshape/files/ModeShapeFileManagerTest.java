@@ -121,21 +121,30 @@ public final class ModeShapeFileManagerTest {
     
     @Test
     public void shouldUploadAndSequenceXml() throws Exception {
-        final Node node = upload( "pom.xml" );
+        final String path = upload( "pom.xml" );
+        final Session session = fileMgr.session();
+        final Node node = session.getRootNode().getNode( path.substring( 1 ) );
         assertThat( node.getNode( "modexml:document" ), notNullValue() );
+        session.logout();
     }
     
     @Test
     public void shouldUploadAndSequenceXsd() throws Exception {
-        final Node node = upload( "Books.xsd" );
+        final String path = upload( "Books.xsd" );
+        final Session session = fileMgr.session();
+        final Node node = session.getRootNode().getNode( path.substring( 1 ) );
         assertThat( node.getNode( "xs:schemaDocument" ), notNullValue() );
+        session.logout();
     }
     
-    private Node upload( final String file ) throws Exception {
-        final Node node = fileMgr.upload( new File( getClass().getClassLoader().getResource( file ).toURI() ), null );
-        assertThat( node, notNullValue() );
+    private String upload( final String file ) throws Exception {
+        final String path = fileMgr.upload( new File( getClass().getClassLoader().getResource( file ).toURI() ), null );
+        assertThat( path, notNullValue() );
+        final Session session = fileMgr.session();
+        final Node node = session.getRootNode().getNode( path.substring( 1 ) );
         assertThat( node.getNode( "jcr:content" ), notNullValue() );
         assertThat( node.getNode( "jcr:content" ).getProperty( "jcr:data" ), notNullValue() );
-        return node;
+        session.logout();
+        return path;
     }
 }
