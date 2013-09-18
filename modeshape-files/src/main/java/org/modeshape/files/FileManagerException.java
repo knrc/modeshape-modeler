@@ -21,28 +21,33 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+
 package org.modeshape.files;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-
-import org.junit.Test;
-import org.modeshape.common.i18n.I18nResource;
-
-/**
- * Tests for {@link ModeShapeFileManagerI18n}.
- */
-public class ModeShapeFileManagerI18nTest {
+public class FileManagerException extends Exception {
     
-    @Test
-    public void shouldHaveAllMessagesInitialized() throws Exception {
-        for ( final Field field : ModeShapeFileManagerI18n.class.getFields() ) {
-            if ( !Modifier.isStatic( field.getModifiers() ) || !( I18nResource.class.isAssignableFrom( field.getType() ) ) ) return;
-            final String message = field.get( null ).toString();
-            assertThat( message, message.startsWith( "<" ), is( false ) );
-        }
+    /**
+     * @param message
+     */
+    public FileManagerException( final String message ) {
+        super( message );
+        
+    }
+    
+    /**
+     * @param message
+     * @param cause
+     */
+    public FileManagerException( final String message,
+                                 final Throwable cause ) {
+        super( message, cause );
+        
+    }
+    
+    /**
+     * @param cause
+     */
+    public FileManagerException( final Throwable cause ) {
+        super( cause );
     }
 }

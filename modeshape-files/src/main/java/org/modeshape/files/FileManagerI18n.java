@@ -21,46 +21,26 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.common.logging;
+package org.modeshape.files;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.modeshape.common.i18n.I18n;
 
-import org.modeshape.files.TestLogger;
-
-final class CustomLoggerFactory extends LogFactory {
+/**
+ * Internationalized string constants for the <strong>ModeShape File Manager</strong> project.
+ */
+public class FileManagerI18n {
     
-    /**
-     * Map of loggers keyed by logger name.
-     */
-    private final Map< String, Logger > loggerMap;
+    public static I18n fileManagerStarted;
+    public static I18n fileManagerStopped;
+    public static I18n unableToSequenceUploadedFile;
+    public static I18n unknownModelType;
+    public static I18n unableToDetermineDefaultModelType;
     
-    /**
-     * Constructs the factory.
-     */
-    CustomLoggerFactory() {
-        this.loggerMap = new HashMap< String, Logger >();
-    }
-    
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.common.logging.LogFactory#getLogger(java.lang.String)
-     */
-    @Override
-    public Logger getLogger( final String name ) {
-        Logger logger = null;
-        
-        // protect against concurrent access of the loggerMap
-        synchronized ( this ) {
-            logger = this.loggerMap.get( name );
-            
-            if ( logger == null ) {
-                logger = new TestLogger( name );
-                this.loggerMap.put( name, logger );
-            }
+    static {
+        try {
+            I18n.initialize( FileManagerI18n.class );
+        } catch ( final Exception err ) {
+            System.err.println( err );
         }
-        
-        return logger;
     }
 }

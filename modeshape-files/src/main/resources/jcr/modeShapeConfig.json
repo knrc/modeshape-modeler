@@ -11,18 +11,5 @@
             "useOnFailedLogin" : false
         }
     },
-    "node-types" : ["jcr/metamodel.cnd"],
-    "sequencing" : {
-        "removeDerivedContentWithOriginal" : true,
-        "sequencers" : {
-            "XSD Sequencer" : {
-                "classname" : "xsdsequencer",
-                "pathExpressions" : [ "default:(//)*.xsd/jcr:content[@jcr:data] => $1" ]
-            },
-            "XML Sequencer" : {
-                "classname" : "xmlsequencer",
-                "pathExpressions" : [ "default:(//)*.xml/jcr:content[@jcr:data] => $1" ]
-            }
-        }
-    }
+    "node-types" : ["jcr/metamodel.cnd"]
 }
