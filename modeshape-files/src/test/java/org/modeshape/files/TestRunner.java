@@ -60,7 +60,11 @@ public class TestRunner extends BlockJUnit4ClassRunner {
             if ( Character.isLowerCase( c ) ) builder.append( c );
             else builder.append( ' ' ).append( Character.toLowerCase( c ) );
         }
-        System.out.println( "Testing " + getTestClass().getJavaClass().getSimpleName() + ' ' + builder + "..." );
+        final String testClassName = getTestClass().getJavaClass().getSimpleName();
+        System.out.println( "Testing "
+                            + testClassName.substring( 0, testClassName.endsWith( "Test" ) ? testClassName.length() - 4
+                                                                                          : testClassName.length() ) + ' '
+                            + builder + "..." );
         super.runChild( method, notifier );
     }
 }

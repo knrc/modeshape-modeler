@@ -23,22 +23,26 @@
  */
 package org.modeshape.files;
 
-import org.modeshape.common.i18n.I18n;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+
+import org.junit.Test;
+import org.modeshape.common.i18n.I18nResource;
 
 /**
- * Internationalized string constants for the <strong>ModeShape File Manager</strong> project.
+ * Tests for {@link FileManagerI18n}.
  */
-public class ModeShapeFileManagerI18n {
+public class FileManagerI18nTest {
     
-    public static I18n modeShapeFileManagerStarted;
-    public static I18n modeShapeFileManagerStopped;
-    public static I18n unableToSequenceUploadedFile;
-    
-    static {
-        try {
-            I18n.initialize( ModeShapeFileManagerI18n.class );
-        } catch ( final Exception err ) {
-            System.err.println( err );
+    @Test
+    public void shouldHaveAllMessagesInitialized() throws Exception {
+        for ( final Field field : FileManagerI18n.class.getFields() ) {
+            if ( !Modifier.isStatic( field.getModifiers() ) || !( I18nResource.class.isAssignableFrom( field.getType() ) ) ) return;
+            final String message = field.get( null ).toString();
+            assertThat( message, message.startsWith( "<" ), is( false ) );
         }
     }
 }
