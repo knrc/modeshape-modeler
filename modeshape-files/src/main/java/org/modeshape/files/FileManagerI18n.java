@@ -33,8 +33,9 @@ public final class FileManagerI18n {
     public static I18n fileManagerStarted;
     public static I18n fileManagerStopped;
     public static I18n mustBeHttpUrl;
-    public static I18n unknownModelType;
     public static I18n unableToDetermineDefaultModelType;
+    public static I18n unableToFindResource;
+    public static I18n unknownModelType;
     
     static {
         try {

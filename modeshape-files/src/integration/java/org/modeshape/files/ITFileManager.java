@@ -37,7 +37,7 @@ import org.modeshape.files.FileManagerException;
 import org.modeshape.modeler.ModelType;
 import org.modeshape.modeler.integration.BaseIntegrationTest;
 
-public class FileManagerIntegrationTest extends BaseIntegrationTest {
+public class ITFileManager extends BaseIntegrationTest {
     
     // private void createDefaultModel( final String fileName,
     // final String modelType ) throws Exception {
