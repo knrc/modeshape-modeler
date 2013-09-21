@@ -47,12 +47,12 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.ValueFormatException;
 
-import org.apache.log4j.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.modeshape.common.collection.Collections;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.files.FileManagerException;
 import org.modeshape.files.FileManagerI18n;
 import org.modeshape.jcr.JcrLexicon;
@@ -374,7 +374,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
             try {
                 return new URL( null, "resource:" + name, urlStreamHandler );
             } catch ( final MalformedURLException e ) {
-                Logger.getLogger( getClass() ).error( e );
+                Logger.getLogger( getClass() ).error( e, FileManagerI18n.unableToFindResource, name );
             }
             return null;
         }
