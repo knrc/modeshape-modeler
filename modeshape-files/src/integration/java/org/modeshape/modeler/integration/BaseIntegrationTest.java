@@ -21,26 +21,30 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.files;
+package org.modeshape.modeler.integration;
 
-import org.modeshape.common.i18n.I18n;
+import javax.jcr.Repository;
+import javax.jcr.Session;
 
-/**
- * Internationalized string constants, in alphabetical order, for the <strong>ModeShape File Manager</strong> project.
- */
-public final class FileManagerI18n {
+import org.modeshape.modeler.ModelTypeManager;
+import org.modeshape.modeler.test.BaseTest;
+
+public abstract class BaseIntegrationTest extends BaseTest {
     
-    public static I18n fileManagerStarted;
-    public static I18n fileManagerStopped;
-    public static I18n mustBeHttpUrl;
-    public static I18n unknownModelType;
-    public static I18n unableToDetermineDefaultModelType;
+    protected static final String SEQUENCER_REPOSITORY = ModelTypeManager.MAVEN_SEQUENCER_REPOSITORY;
     
-    static {
+    protected String modeShapeVersion() throws Exception {
+        final Session session = session();
         try {
-            I18n.initialize( FileManagerI18n.class );
-        } catch ( final Exception err ) {
-            System.err.println( err );
+            return session.getRepository().getDescriptor( Repository.REP_VERSION_DESC );
+        } finally {
+            session.logout();
         }
+    }
+    
+    protected String sequencerUrl( final String type ) throws Exception {
+        final String version = modeShapeVersion();
+        return SEQUENCER_REPOSITORY + "modeshape-sequencer-" + type + '/' + version + "/modeshape-sequencer-" + type + '-'
+               + version + "-module-with-dependencies.zip";
     }
 }

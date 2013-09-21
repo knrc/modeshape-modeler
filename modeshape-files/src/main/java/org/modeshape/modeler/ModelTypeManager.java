@@ -21,26 +21,30 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.files;
+package org.modeshape.modeler;
 
-import org.modeshape.common.i18n.I18n;
+import java.util.Set;
 
-/**
- * Internationalized string constants, in alphabetical order, for the <strong>ModeShape File Manager</strong> project.
- */
-public final class FileManagerI18n {
+import org.modeshape.files.FileManagerException;
+import org.modeshape.modeler.impl.ModelTypeManagerImpl;
+
+public interface ModelTypeManager {
     
-    public static I18n fileManagerStarted;
-    public static I18n fileManagerStopped;
-    public static I18n mustBeHttpUrl;
-    public static I18n unknownModelType;
-    public static I18n unableToDetermineDefaultModelType;
+    String JBOSS_SEQUENCER_REPOSITORY = "https://repository.jboss.org/nexus/content/groups/public-jboss"
+                                        + ModelTypeManagerImpl.MODESHAPE_GROUP;
+    String MAVEN_SEQUENCER_REPOSITORY = "http://repo1.maven.org/maven2" + ModelTypeManagerImpl.MODESHAPE_GROUP;
     
-    static {
-        try {
-            I18n.initialize( FileManagerI18n.class );
-        } catch ( final Exception err ) {
-            System.err.println( err );
-        }
-    }
+    void addSequencerRepository( final String repositoryUrl );
+    
+    void installSequencers( final String archiveUrl ) throws FileManagerException;
+    
+    Set< ModelType > modelTypes();
+    
+    void removeSequencerRepository( final String repositoryUrl );
+    
+    Set< String > sequencerArchives( final String groupUrl ) throws FileManagerException;
+    
+    Set< String > sequencerGroups( final String repositoryUrl ) throws FileManagerException;
+    
+    Set< String > sequencerRepositories();
 }

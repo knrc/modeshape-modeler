@@ -24,72 +24,46 @@
 package org.modeshape.files;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import javax.jcr.Node;
-import javax.jcr.PathNotFoundException;
-import javax.jcr.Repository;
-import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.jcr.ValueFormatException;
 
-import org.infinispan.util.ReflectionUtil;
-import org.modeshape.common.collection.Problem;
-import org.modeshape.common.collection.Problems;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.jcr.ExtensionLogger;
 import org.modeshape.jcr.JcrLexicon;
-import org.modeshape.jcr.ModeShapeEngine;
-import org.modeshape.jcr.NoSuchRepositoryException;
-import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.ValueFactory;
-import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
-import org.modeshape.sequencer.xml.XmlSequencer;
-import org.modeshape.sequencer.xsd.XsdSequencer;
+import org.modeshape.modeler.ModelType;
+import org.modeshape.modeler.ModelTypeManager;
+import org.modeshape.modeler.impl.Manager;
+import org.modeshape.modeler.impl.Task;
 
 public final class FileManager {
     
-    public static final String DEFAULT_MODESHAPE_CONFIGURATION_PATH = "jcr/modeShapeConfig.json";
+    final Manager mgr = new Manager();
     
-    private String modeShapeConfigurationPath = DEFAULT_MODESHAPE_CONFIGURATION_PATH;
-    private ModeShapeEngine modeShape;
-    private Repository repository;
-    final Map< Sequencer, List< String > > sequencers = new HashMap<>();
-    
-    public Set< String > applicableModelTypes( final String filePath ) throws FileManagerException {
-        CheckArg.isNotEmpty( filePath, "filePath" );
-        return run( new Task< Set< String > >() {
-            
-            @Override
-            public Set< String > run( final Session session ) throws Exception {
-                final Set< String > types = new HashSet<>();
-                for ( final Entry< Sequencer, List< String >> entry : applicableSequencers( fileNode( session, filePath ) ) )
-                    types.add( entry.getKey().getName() );
-                return types;
-            }
-        } );
-    }
-    
-    Set< Entry< Sequencer, List< String > > > applicableSequencers( final Node fileNode ) throws ValueFormatException,
-                    PathNotFoundException, RepositoryException {
-        final Set< Entry< Sequencer, List< String >> > applicableSequencers = new HashSet<>();
-        for ( final Entry< Sequencer, List< String >> entry : sequencers.entrySet() )
-            if ( entry.getKey().isAccepted( fileNode.getNode( JcrLexicon.CONTENT.toString() )
-                                                    .getProperty( JcrLexicon.MIMETYPE.toString() ).getString() ) ) {
-                applicableSequencers.add( entry );
+    Set< ModelType > applicableModelTypes( final Node fileNode ) throws Exception {
+        final Set< ModelType > applicableSequencers = new HashSet<>();
+        for ( final ModelType type : mgr.modelTypeManager().modelTypes() )
+            if ( type.sequencer().isAccepted( fileNode.getNode( JcrLexicon.CONTENT.getString() )
+                                                      .getProperty( JcrLexicon.MIMETYPE.getString() ).getString() ) ) {
+                applicableSequencers.add( type );
             }
         return applicableSequencers;
+    }
+    
+    public Set< ModelType > applicableModelTypes( final String filePath ) throws FileManagerException {
+        CheckArg.isNotEmpty( filePath, "filePath" );
+        return mgr.run( new Task< Set< ModelType > >() {
+            
+            @Override
+            public final Set< ModelType > run( final Session session ) throws Exception {
+                return applicableModelTypes( fileNode( session, filePath ) );
+            }
+        } );
     }
     
     public void createDefaultModel( final String filePath ) throws FileManagerException {
@@ -97,164 +71,97 @@ public final class FileManager {
     }
     
     public void createModel( final String filePath,
-                             final String modelType ) throws FileManagerException {
+                             final String modelTypeName ) throws FileManagerException {
         CheckArg.isNotEmpty( filePath, "filePath" );
-        run( new Task< Void >() {
+        mgr.run( new Task< Void >() {
             
             @Override
             public Void run( final Session session ) throws Exception {
                 final Node fileNode = fileNode( session, filePath );
-                Sequencer sequencer = null;
-                if ( modelType == null ) {
+                ModelType modelType = null;
+                if ( modelTypeName == null ) {
                     // If no model type supplied, use default sequencer if one exists
-                    sequencer = defaultSequencer( fileNode, applicableSequencers( fileNode ) );
-                    if ( sequencer == null ) throw new IllegalArgumentException(
+                    modelType = defaultSequencer( fileNode, applicableModelTypes( fileNode ) );
+                    if ( modelType == null ) throw new IllegalArgumentException(
                                                                                  FileManagerI18n.unableToDetermineDefaultModelType.text( filePath ) );
                 } else {
                     // Find sequencer with the supplied name
-                    for ( final Sequencer availableSequencer : sequencers.keySet() )
-                        if ( modelType.equals( availableSequencer.getName() ) ) {
-                            sequencer = availableSequencer;
+                    for ( final ModelType type : mgr.modelTypeManager().modelTypes() )
+                        if ( modelTypeName.equals( type.name() ) ) {
+                            modelType = type;
                             break;
                         }
-                    if ( sequencer == null ) throw new IllegalArgumentException( FileManagerI18n.unknownModelType.text( modelType ) );
+                    if ( modelType == null ) throw new IllegalArgumentException( FileManagerI18n.unknownModelType.text( modelType ) );
                 }
                 // Build the model
-                // Sequence file
                 final ValueFactory valueFactory = ( ValueFactory ) session.getValueFactory();
                 final Calendar cal = Calendar.getInstance();
-                sequencer.execute( fileNode.getNode( JcrLexicon.CONTENT.toString() ).getProperty( JcrLexicon.DATA.toString() ),
-                                   fileNode.addNode( sequencer.getName() ), new Sequencer.Context() {
-                                       
-                                       @Override
-                                       public Calendar getTimestamp() {
-                                           return cal;
-                                       }
-                                       
-                                       @Override
-                                       public ValueFactory valueFactory() {
-                                           return valueFactory;
-                                       }
-                                   } );
+                modelType.sequencer().execute( fileNode.getNode( JcrLexicon.CONTENT.getString() ).getProperty( JcrLexicon.DATA.getString() ),
+                                               fileNode.addNode( modelType.name() ), new Sequencer.Context() {
+                                                   
+                                                   @Override
+                                                   public Calendar getTimestamp() {
+                                                       return cal;
+                                                   }
+                                                   
+                                                   @Override
+                                                   public ValueFactory valueFactory() {
+                                                       return valueFactory;
+                                                   }
+                                               } );
                 session.save();
                 return null;
             }
         } );
     }
     
-    public String defaultModelType( final String filePath ) throws FileManagerException {
+    public ModelType defaultModelType( final String filePath ) throws FileManagerException {
         CheckArg.isNotEmpty( filePath, "filePath" );
-        return run( new Task< String >() {
+        return mgr.run( new Task< ModelType >() {
             
             @Override
-            public String run( final Session session ) throws Exception {
+            public ModelType run( final Session session ) throws Exception {
                 final Node node = fileNode( session, filePath );
-                final Sequencer sequencer = defaultSequencer( node, applicableSequencers( node ) );
-                return sequencer == null ? null : sequencer.getName();
+                final ModelType type = defaultSequencer( node, applicableModelTypes( node ) );
+                return type == null ? null : type;
             }
         } );
     }
     
-    Sequencer defaultSequencer( final Node fileNode,
-                                final Set< Entry< Sequencer, List< String > > > applicableSequencers ) throws RepositoryException {
+    ModelType defaultSequencer( final Node fileNode,
+                                final Set< ModelType > applicableSequencers ) throws Exception {
         final String ext = fileNode.getName().substring( fileNode.getName().lastIndexOf( '.' ) + 1 );
-        for ( final Entry< Sequencer, List< String > > entry : applicableSequencers )
-            if ( entry.getValue().contains( ext ) ) return entry.getKey();
-        return applicableSequencers.isEmpty() ? null : applicableSequencers.iterator().next().getKey();
+        for ( final ModelType type : applicableSequencers )
+            if ( type.sourceFileExtensions().contains( ext ) ) return type;
+        return applicableSequencers.isEmpty() ? null : applicableSequencers.iterator().next();
     }
     
     Node fileNode( final Session session,
-                   final String filePath ) throws PathNotFoundException, RepositoryException {
+                   final String filePath ) throws Exception {
         // Return an absolute path
         return session.getNode( filePath.charAt( 0 ) == '/' ? filePath : '/' + filePath );
     }
     
-    /**
-     * @return the path to the ModeShape configuration file. Default is {@value #DEFAULT_MODESHAPE_CONFIGURATION_PATH}.
-     */
+    public ModelTypeManager modelTypeManager() {
+        return mgr.modelTypeManager();
+    }
+    
     public String modeShapeConfigurationPath() {
-        return modeShapeConfigurationPath;
-    }
-    
-    < T > T run( final Task< T > task ) throws FileManagerException {
-        final Session session = session();
-        try {
-            return task.run( session );
-        } catch ( final RuntimeException e ) {
-            throw e;
-        } catch ( final Exception e ) {
-            throw new FileManagerException( e );
-        } finally {
-            session.logout();
-        }
-    }
-    
-    Session session() throws FileManagerException {
-        try {
-            if ( modeShape == null ) {
-                modeShape = new ModeShapeEngine();
-                modeShape.start();
-                final RepositoryConfiguration config = RepositoryConfiguration.read( modeShapeConfigurationPath );
-                final Problems problems = config.validate();
-                if ( problems.hasProblems() ) {
-                    for ( final Problem problem : problems )
-                        Logger.getLogger( getClass() ).error( problem.getMessage(), problem.getThrowable() );
-                    throw problems.iterator().next().getThrowable();
-                }
-                try {
-                    repository = modeShape.getRepository( config.getName() );
-                } catch ( final NoSuchRepositoryException err ) {
-                    repository = modeShape.deploy( config );
-                }
-                // TODO: Remove after fixing issue #1
-                // Note, the order matters here. For instance, the XSD sequencer will by default accept XML files for sequencing
-                sequencers.put( new XmlSequencer(), Arrays.asList( "xml" ) );
-                sequencers.put( new XsdSequencer(), Arrays.asList( "xsd" ) );
-                final Session session = repository.login( "default" );
-                for ( final Sequencer sequencer : sequencers.keySet() ) {
-                    ReflectionUtil.setValue( sequencer, "logger", ExtensionLogger.getLogger( sequencer.getClass() ) );
-                    ReflectionUtil.setValue( sequencer, "repositoryName", config.getName() );
-                    // The sequencer's name will also be the node's name containing the model (i.e., sequenced file)
-                    ReflectionUtil.setValue( sequencer, "name", sequencer.getClass().getSimpleName() );
-                    sequencer.initialize( session.getWorkspace().getNamespaceRegistry(),
-                                          ( NodeTypeManager ) session.getWorkspace().getNodeTypeManager() );
-                }
-                Logger.getLogger( getClass() ).info( FileManagerI18n.fileManagerStarted );
-                return session;
-            }
-            
-            return repository.login( "default" );
-        } catch ( final Throwable e ) {
-            throw new FileManagerException( e );
-        }
+        return mgr.modeShapeConfigurationPath();
     }
     
     public void setModeShapeConfigurationPath( final String modeShapeConfigurationPath ) {
-        this.modeShapeConfigurationPath = modeShapeConfigurationPath == null ? DEFAULT_MODESHAPE_CONFIGURATION_PATH
-                                                                            : modeShapeConfigurationPath;
+        mgr.setModeShapeConfigurationPath( modeShapeConfigurationPath );
     }
     
-    /**
-     * @throws FileManagerException
-     */
     public void stop() throws FileManagerException {
-        if ( modeShape == null ) Logger.getLogger( getClass() )
-                                       .debug( "Attempt to stop ModeShape File Manager when it is already stopped" );
-        else {
-            try {
-                modeShape.shutdown().get();
-            } catch ( InterruptedException | ExecutionException e ) {
-                throw new FileManagerException( e );
-            }
-            modeShape = null;
-            Logger.getLogger( getClass() ).info( FileManagerI18n.fileManagerStopped );
-        }
+        mgr.stop();
     }
     
     public String upload( final File file,
                           final String workspaceParentPath ) throws FileManagerException {
         CheckArg.isNotNull( file, "file" );
-        return run( new Task< String >() {
+        return mgr.run( new Task< String >() {
             
             @Override
             public String run( final Session session ) throws Exception {
@@ -263,15 +170,10 @@ public final class FileManager {
                 if ( !path.endsWith( "/" ) ) path += '/';
                 final Node fileNode = new JcrTools().uploadFile( session, path + file.getName(), file );
                 // Add unstructured mix-in to allow node to contain anything else, like models created later
-                fileNode.addMixin( "modefm:unstructured" );
+                fileNode.addMixin( Manager.UNSTRUCTURED_MIXIN );
                 session.save();
                 return fileNode.getPath();
             }
         } );
-    }
-    
-    public static interface Task< T > {
-        
-        T run( Session session ) throws Exception;
     }
 }

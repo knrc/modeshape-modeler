@@ -35,57 +35,18 @@ import java.util.Set;
 import javax.jcr.Node;
 import javax.jcr.Session;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.modeshape.jcr.JcrLexicon;
-import org.modeshape.sequencer.xml.XmlSequencer;
-import org.modeshape.sequencer.xsd.XsdSequencer;
+import org.modeshape.modeler.ModelType;
+import org.modeshape.modeler.impl.Manager;
+import org.modeshape.modeler.test.BaseTest;
 
 /**
  * Tests for {@link FileManager}.
  */
-@RunWith( TestRunner.class )
-public final class FileManagerTest {
+public final class FileManagerTest extends BaseTest {
     
     private static final String TEST_MODESHAPE_CONFIGURATION_PATH = "testModeShapeConfig.json";
-    
-    private FileManager fileMgr;
-    
-    @After
-    public void after() throws Exception {
-        fileMgr.stop();
-    }
-    
-    @Before
-    public void before() {
-        fileMgr = new FileManager();
-    }
-    
-    private void createDefaultModel( final String fileName,
-                                     final String modelType ) throws Exception {
-        final String path = upload( fileName );
-        fileMgr.createDefaultModel( path );
-        final Session session = fileMgr.session();
-        assertThat( session.getNode( path ).getNode( modelType ), notNullValue() );
-        session.logout();
-    }
-    
-    @Test
-    public void shouldCreateModelOfDefaultModelTypeIfNotSupplied() throws Exception {
-        createDefaultModel( "pom.xml", XmlSequencer.class.getSimpleName() );
-        createDefaultModel( "Books.xsd", XsdSequencer.class.getSimpleName() );
-    }
-    
-    @Test
-    public void shouldCreateModelOfSuppliedModelType() throws Exception {
-        final String path = upload( "Books.xsd" );
-        fileMgr.createModel( path, XmlSequencer.class.getSimpleName() );
-        final Session session = fileMgr.session();
-        assertThat( session.getNode( path ).getNode( XmlSequencer.class.getSimpleName() ), notNullValue() );
-        session.logout();
-    }
     
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToCreateDefaultModelIfPathIsEmpty() throws Exception {
@@ -95,11 +56,6 @@ public final class FileManagerTest {
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToCreateDefaultModelIfPathIsNull() throws Exception {
         fileMgr.createDefaultModel( null );
-    }
-    
-    @Test( expected = FileManagerException.class )
-    public void shouldFailToCreateModelIfFileIsInvalid() throws Exception {
-        fileMgr.createDefaultModel( upload( "bad.xml" ) );
     }
     
     @Test( expected = IllegalArgumentException.class )
@@ -122,11 +78,6 @@ public final class FileManagerTest {
         fileMgr.createModel( "dummy", null );
     }
     
-    @Test( expected = FileManagerException.class )
-    public void shouldFailToCreateModelIfTypeIsInapplicable() throws Exception {
-        fileMgr.createModel( upload( "LICENSE" ), XmlSequencer.class.getSimpleName() );
-    }
-    
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToCreateModelIfTypeIsUnknown() throws Exception {
         fileMgr.createModel( upload( "Books.xsd" ), "dummy" );
@@ -139,7 +90,7 @@ public final class FileManagerTest {
     
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetApplicableModelTypesIfPathIsNull() throws Exception {
-        fileMgr.applicableModelTypes( null );
+        fileMgr.applicableModelTypes( ( String ) null );
     }
     
     @Test( expected = IllegalArgumentException.class )
@@ -163,26 +114,14 @@ public final class FileManagerTest {
     }
     
     @Test
-    public void shouldGetApplicableModelTypes() throws Exception {
-        final Set< String > types = fileMgr.applicableModelTypes( upload( "Books.xsd" ) );
-        assertThat( types, notNullValue() );
-        assertThat( types.isEmpty(), is( false ) );
-    }
-    
-    @Test
     public void shouldGetChangedModeShapeConfigurationPath() {
         fileMgr.setModeShapeConfigurationPath( TEST_MODESHAPE_CONFIGURATION_PATH );
         assertThat( fileMgr.modeShapeConfigurationPath(), is( TEST_MODESHAPE_CONFIGURATION_PATH ) );
     }
     
     @Test
-    public void shouldGetDefaultModelType() throws Exception {
-        assertThat( fileMgr.defaultModelType( upload( "Books.xsd" ) ), notNullValue() );
-    }
-    
-    @Test
     public void shouldGetDefaultModeShapeConfigurationPathIfNotSet() {
-        assertThat( new FileManager().modeShapeConfigurationPath(), is( FileManager.DEFAULT_MODESHAPE_CONFIGURATION_PATH ) );
+        assertThat( new FileManager().modeShapeConfigurationPath(), is( Manager.DEFAULT_MODESHAPE_CONFIGURATION_PATH ) );
     }
     
     @Test
@@ -190,14 +129,26 @@ public final class FileManagerTest {
         fileMgr.setModeShapeConfigurationPath( TEST_MODESHAPE_CONFIGURATION_PATH );
         assertThat( fileMgr.modeShapeConfigurationPath(), is( TEST_MODESHAPE_CONFIGURATION_PATH ) );
         fileMgr.setModeShapeConfigurationPath( null );
-        assertThat( new FileManager().modeShapeConfigurationPath(), is( FileManager.DEFAULT_MODESHAPE_CONFIGURATION_PATH ) );
+        assertThat( new FileManager().modeShapeConfigurationPath(), is( Manager.DEFAULT_MODESHAPE_CONFIGURATION_PATH ) );
     }
     
     @Test
     public void shouldGetEmptyApplicableModelTypesIfFileHasUknownMimeType() throws Exception {
-        final Set< String > types = fileMgr.applicableModelTypes( upload( "LICENSE" ) );
+        final Set< ModelType > types = fileMgr.applicableModelTypes( upload( "LICENSE" ) );
         assertThat( types, notNullValue() );
         assertThat( types.isEmpty(), is( true ) );
+    }
+    
+    @Test
+    public void shouldGetNoApplicableModelTypes() throws Exception {
+        final Set< ModelType > types = fileMgr.applicableModelTypes( upload( "Books.xsd" ) );
+        assertThat( types, notNullValue() );
+        assertThat( types.isEmpty(), is( true ) );
+    }
+    
+    @Test
+    public void shouldGetNullDefaultModelType() throws Exception {
+        assertThat( fileMgr.defaultModelType( upload( "Books.xsd" ) ), nullValue() );
     }
     
     @Test
@@ -207,11 +158,13 @@ public final class FileManagerTest {
     
     @Test
     public void shouldGetSession() throws Exception {
-        final Session session = fileMgr.session();
+        final Session session = session();
         assertThat( session, notNullValue() );
-        final Session newSession = fileMgr.session();
+        final Session newSession = session();
         assertThat( newSession, notNullValue() );
         assertThat( newSession, not( session ) );
+        session.logout();
+        newSession.logout();
     }
     
     @Test
@@ -231,11 +184,11 @@ public final class FileManagerTest {
         if ( !expectedPath.endsWith( "/" ) ) expectedPath += '/';
         expectedPath += fileName;
         assertThat( path, is( expectedPath ) );
-        final Session session = fileMgr.session();
+        final Session session = session();
         final Node node = session.getNode( path );
         assertThat( node, notNullValue() );
-        assertThat( node.getNode( JcrLexicon.CONTENT.toString() ), notNullValue() );
-        assertThat( node.getNode( JcrLexicon.CONTENT.toString() ).getProperty( JcrLexicon.DATA.toString() ), notNullValue() );
+        assertThat( node.getNode( JcrLexicon.CONTENT.getString() ), notNullValue() );
+        assertThat( node.getNode( JcrLexicon.CONTENT.getString() ).getProperty( JcrLexicon.DATA.getString() ), notNullValue() );
         session.logout();
         return path;
     }
