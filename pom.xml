@@ -59,9 +59,17 @@
   </developers>
 
   <properties>
+
     <!-- Instruct the build to use only UTF-8 encoding for source code -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss</maven.build.timestamp.format>
+
+    <!-- Used to locate the profile specific configuration file. -->
+    <build.profile.id>dev</build.profile.id>
+
+    <!-- Only unit tests are run by default. -->
+    <skip.integration.tests>true</skip.integration.tests>
+    <skip.unit.tests>false</skip.unit.tests>
 
     <!-- Distribution URLs -->
     <jboss.releases.repo.url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/</jboss.releases.repo.url>
@@ -69,7 +77,8 @@
 
     <!-- Maven plugin versions -->
     <maven.surefire.report.plugin.version>2.4.3</maven.surefire.report.plugin.version>
-    <maven.surefire.plugin.version>2.7.1</maven.surefire.plugin.version>
+    <maven.surefire.plugin.version>2.16</maven.surefire.plugin.version>
+    <maven.failsafe.plugin.version>2.16</maven.failsafe.plugin.version>
     <maven.assembly.plugin.version>2.2</maven.assembly.plugin.version>
     <maven.install.plugin.version>2.3.1</maven.install.plugin.version>
     <maven.javadoc.plugin.version>2.7</maven.javadoc.plugin.version>
@@ -80,16 +89,35 @@
     <maven.compiler.plugin.version>2.3.2</maven.compiler.plugin.version>
     <maven.source.plugin.version>2.1.2</maven.source.plugin.version>
     <maven.deploy.plugin.version>2.5</maven.deploy.plugin.version>
+    <build.helper.maven.plugin.version>1.8</build.helper.maven.plugin.version>
 
     <!-- Dependency versions -->
     <jcr.version>2.0</jcr.version>
+    <jsoup.version>1.7.2</jsoup.version>
     <junit.version>4.11</junit.version>
     <log4j.version>1.2.16</log4j.version>
     <modeshape.version>3.5.0.Final</modeshape.version>
     <slf4j.api.version>1.5.11</slf4j.api.version>
     <slf4j.log4j.version>1.5.11</slf4j.log4j.version>
     <slf4j.nop.version>1.5.11</slf4j.nop.version>
+    
   </properties>
+
+  <profiles>
+    <profile>
+        <id>dev</id>
+    </profile>
+    <profile>
+      <id>integration-test</id>
+      <properties>
+        <!-- Used to locate the profile specific configuration file. -->
+        <build.profile.id>integration-test</build.profile.id>
+        <!-- Only integration tests are run. -->
+        <skip.integration.tests>false</skip.integration.tests>
+        <skip.unit.tests>true</skip.unit.tests>
+      </properties>
+    </profile>
+  </profiles>
 
   <build>
     <!-- This section defines the default plugin settings inherited by child 
@@ -166,6 +194,12 @@
             </property>
           </systemProperties>
           <argLine>-Xmx368m -XX:MaxPermSize=128m</argLine>
+	        <!-- Skips unit tests if the value of skip.unit.tests property is true -->
+	        <skipTests>${skip.unit.tests}</skipTests>
+	        <!-- Excludes integration tests when unit tests are run. -->
+	        <excludes>
+	            <exclude>**/IT*.java</exclude>
+	        </excludes>
         </configuration>
       </plugin>
       <!-- Build a test-jar for each project, so that src/test/* resources and 
@@ -195,7 +229,48 @@
           </archive>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>${build.helper.maven.plugin.version}</version><!--$NO-MVN-MAN-VER$ -->
+        <executions>
+          <!-- States that the plugin's add-test-source goal is executed at generate-test-sources phase. -->
+          <execution>
+            <id>add-integration-test-sources</id>
+            <phase>generate-test-sources</phase>
+            <goals>
+              <goal>add-test-source</goal>
+            </goals>
+            <configuration>
+              <!-- Configures the source directory of integration tests. -->
+              <sources>
+                <source>src/integration/java</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>${maven.failsafe.plugin.version}</version>
+        <executions>
+          <!-- States that both integration-test and verify goals of the Failsafe Maven plugin are executed. -->
+          <execution>
+            <id>integration-tests</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <!-- Skips integration tests if the value of skip.integration.tests property is true -->
+              <skipTests>${skip.integration.tests}</skipTests>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
+  
   </build>
 
   <dependencyManagement>
@@ -238,6 +313,12 @@
         <artifactId>junit</artifactId>
         <version>${junit.version}</version>
         <scope>test</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.jsoup</groupId>
+        <artifactId>jsoup</artifactId>
+        <version>1.7.2</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

@@ -22,11 +22,12 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.modeshape.files;
+package org.modeshape.modeler.test;
 
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 
+import org.apache.log4j.Logger;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.FrameworkMethod;
@@ -54,17 +55,21 @@ public class TestRunner extends BlockJUnit4ClassRunner {
     @Override
     protected void runChild( final FrameworkMethod method,
                              final RunNotifier notifier ) {
-        final StringBuilder builder = new StringBuilder();
-        final StringCharacterIterator iter = new StringCharacterIterator( testName( method ) );
-        for ( char c = iter.first(); c != CharacterIterator.DONE; c = iter.next() ) {
-            if ( Character.isLowerCase( c ) ) builder.append( c );
-            else builder.append( ' ' ).append( Character.toLowerCase( c ) );
+        if ( Logger.getLogger( getClass() ).isDebugEnabled() ) {
+            final StringBuilder builder = new StringBuilder();
+            final StringCharacterIterator iter = new StringCharacterIterator( testName( method ) );
+            for ( char c = iter.first(); c != CharacterIterator.DONE; c = iter.next() ) {
+                if ( Character.isLowerCase( c ) )
+                    builder.append( c );
+                else builder.append( ' ' ).append( Character.toLowerCase( c ) );
+            }
+            String testClassName = getTestClass().getJavaClass().getSimpleName();
+            if ( testClassName.endsWith( "Test" ) )
+                testClassName = testClassName.substring( 0, testClassName.length() - "Test".length() );
+            else if ( testClassName.startsWith( "IT" ) )
+                testClassName = testClassName.substring( "IT".length() );
+            Logger.getLogger( getClass() ).debug( "Testing " + testClassName + ' ' + builder + "..." );
         }
-        final String testClassName = getTestClass().getJavaClass().getSimpleName();
-        System.out.println( "Testing "
-                            + testClassName.substring( 0, testClassName.endsWith( "Test" ) ? testClassName.length() - 4
-                                                                                          : testClassName.length() ) + ' '
-                            + builder + "..." );
         super.runChild( method, notifier );
     }
 }

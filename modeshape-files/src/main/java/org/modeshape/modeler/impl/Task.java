@@ -21,26 +21,11 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.files;
+package org.modeshape.modeler.impl;
 
-import org.modeshape.common.i18n.I18n;
+import javax.jcr.Session;
 
-/**
- * Internationalized string constants, in alphabetical order, for the <strong>ModeShape File Manager</strong> project.
- */
-public final class FileManagerI18n {
+public interface Task< T > {
     
-    public static I18n fileManagerStarted;
-    public static I18n fileManagerStopped;
-    public static I18n mustBeHttpUrl;
-    public static I18n unknownModelType;
-    public static I18n unableToDetermineDefaultModelType;
-    
-    static {
-        try {
-            I18n.initialize( FileManagerI18n.class );
-        } catch ( final Exception err ) {
-            System.err.println( err );
-        }
-    }
+    T run( Session session ) throws Exception;
 }

@@ -21,26 +21,36 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.files;
+package org.modeshape.modeler.test;
 
-import org.modeshape.common.i18n.I18n;
+import javax.jcr.Session;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.runner.RunWith;
+import org.modeshape.files.FileManager;
+import org.modeshape.files.FileManagerException;
+import org.modeshape.files.ModelerUtil;
 
 /**
- * Internationalized string constants, in alphabetical order, for the <strong>ModeShape File Manager</strong> project.
+ * Superclass for all test classes
  */
-public final class FileManagerI18n {
+@RunWith( TestRunner.class )
+public abstract class BaseTest {
     
-    public static I18n fileManagerStarted;
-    public static I18n fileManagerStopped;
-    public static I18n mustBeHttpUrl;
-    public static I18n unknownModelType;
-    public static I18n unableToDetermineDefaultModelType;
+    protected FileManager fileMgr;
     
-    static {
-        try {
-            I18n.initialize( FileManagerI18n.class );
-        } catch ( final Exception err ) {
-            System.err.println( err );
-        }
+    @After
+    public void after() throws Exception {
+        fileMgr.stop();
+    }
+    
+    @Before
+    public void before() {
+        fileMgr = new FileManager();
+    }
+    
+    protected Session session() throws FileManagerException {
+        return ModelerUtil.session( fileMgr );
     }
 }

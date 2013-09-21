@@ -23,24 +23,13 @@
  */
 package org.modeshape.files;
 
-import org.modeshape.common.i18n.I18n;
+import javax.jcr.Session;
 
-/**
- * Internationalized string constants, in alphabetical order, for the <strong>ModeShape File Manager</strong> project.
- */
-public final class FileManagerI18n {
+public class ModelerUtil {
     
-    public static I18n fileManagerStarted;
-    public static I18n fileManagerStopped;
-    public static I18n mustBeHttpUrl;
-    public static I18n unknownModelType;
-    public static I18n unableToDetermineDefaultModelType;
-    
-    static {
-        try {
-            I18n.initialize( FileManagerI18n.class );
-        } catch ( final Exception err ) {
-            System.err.println( err );
-        }
+    public static Session session( final FileManager fileManager ) throws FileManagerException {
+        return fileManager.mgr.session();
     }
+    
+    private ModelerUtil() {}
 }
