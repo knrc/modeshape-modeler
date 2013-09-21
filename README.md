@@ -1,5 +1,4 @@
 # ModeShape Modeler Projects
-============================
 
 [![Build Status](https://drone.io/github.com/Polyglotter/modeshape-modeler/status.png)](https://drone.io/github.com/Polyglotter/modeshape-modeler/latest)
 
