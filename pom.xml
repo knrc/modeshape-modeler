@@ -383,7 +383,7 @@
   <!-- modules in alphabetical order -->
   <modules>
     
-    <module>modeshape-files</module>
+    <module>modeshape-modeler</module>
   </modules>
 </project>
 
