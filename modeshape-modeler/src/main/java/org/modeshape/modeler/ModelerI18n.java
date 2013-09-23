@@ -35,7 +35,6 @@ public final class ModelerI18n {
     public static I18n mustBeHttpUrl;
     public static I18n unableToDetermineDefaultModelType;
     public static I18n unableToFindResource;
-    public static I18n unknownModelType;
     
     static {
         try {

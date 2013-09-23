@@ -46,44 +46,39 @@ public final class Modeler {
     }
     
     public void createModel( final String filePath,
-                             final String modelTypeName ) throws ModelerException {
+                             final ModelType modelType ) throws ModelerException {
         CheckArg.isNotEmpty( filePath, "filePath" );
         mgr.run( new Task< Void >() {
             
             @Override
             public Void run( final Session session ) throws Exception {
                 final Node fileNode = mgr.fileNode( session, filePath );
-                ModelType modelType = null;
-                if ( modelTypeName == null ) {
-                    // If no model type supplied, use default sequencer if one exists
-                    modelType = mgr.modelTypeManager().defaultModelType( fileNode, mgr.modelTypeManager().applicableModelTypes( fileNode ) );
-                    if ( modelType == null ) throw new IllegalArgumentException(
-                                                                                 ModelerI18n.unableToDetermineDefaultModelType.text( filePath ) );
-                } else {
-                    // Find sequencer with the supplied name
-                    for ( final ModelType type : mgr.modelTypeManager().modelTypes() )
-                        if ( modelTypeName.equals( type.name() ) ) {
-                            modelType = type;
-                            break;
-                        }
-                    if ( modelType == null ) throw new IllegalArgumentException( ModelerI18n.unknownModelType.text( modelType ) );
+                ModelType type = modelType;
+                if ( modelType == null ) {
+                    // If no model type supplied, use default model type if one exists
+                    type = mgr.modelTypeManager().defaultModelType( fileNode,
+                                                                    mgr.modelTypeManager().applicableModelTypes( fileNode ) );
+                    if ( type == null )
+                        throw new IllegalArgumentException( ModelerI18n.unableToDetermineDefaultModelType.text( filePath ) );
                 }
                 // Build the model
                 final ValueFactory valueFactory = ( ValueFactory ) session.getValueFactory();
                 final Calendar cal = Calendar.getInstance();
-                modelType.sequencer().execute( fileNode.getNode( JcrLexicon.CONTENT.getString() ).getProperty( JcrLexicon.DATA.getString() ),
-                                               fileNode.addNode( modelType.name() ), new Sequencer.Context() {
-                                                   
-                                                   @Override
-                                                   public Calendar getTimestamp() {
-                                                       return cal;
-                                                   }
-                                                   
-                                                   @Override
-                                                   public ValueFactory valueFactory() {
-                                                       return valueFactory;
-                                                   }
-                                               } );
+                type.sequencer().execute( fileNode.getNode( JcrLexicon.CONTENT.getString() )
+                                                  .getProperty( JcrLexicon.DATA.getString() ),
+                                          fileNode.addNode( type.name() ),
+                                          new Sequencer.Context() {
+                                              
+                                              @Override
+                                              public Calendar getTimestamp() {
+                                                  return cal;
+                                              }
+                                              
+                                              @Override
+                                              public ValueFactory valueFactory() {
+                                                  return valueFactory;
+                                              }
+                                          } );
                 session.save();
                 return null;
             }

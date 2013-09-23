@@ -35,6 +35,10 @@ public interface ModelTypeManager {
     
     void addSequencerRepository( final String repositoryUrl );
     
+    Set< ModelType > applicableModelTypes( final String filePath ) throws ModelerException;
+    
+    ModelType defaultModelType( final String filePath ) throws ModelerException;
+    
     void installSequencers( final String archiveUrl ) throws ModelerException;
     
     Set< ModelType > modelTypes();

@@ -32,8 +32,6 @@ import java.util.Set;
 import javax.jcr.Session;
 
 import org.junit.Test;
-import org.modeshape.modeler.ModelType;
-import org.modeshape.modeler.ModelerException;
 import org.modeshape.modeler.integration.BaseIntegrationTest;
 
 public class ITModeler extends BaseIntegrationTest {
@@ -55,11 +53,12 @@ public class ITModeler extends BaseIntegrationTest {
     
     @Test
     public void shouldCreateModelOfSuppliedType() throws Exception {
-        modeler.modelTypeManager().installSequencers( sequencerUrl( "xml" ) );
-        modeler.modelTypeManager().installSequencers( sequencerUrl( "sramp" ) );
-        modeler.modelTypeManager().installSequencers( sequencerUrl( "xsd" ) );
+        final ModelTypeManager mgr = modeler.modelTypeManager();
+        mgr.installSequencers( sequencerUrl( "xml" ) );
+        mgr.installSequencers( sequencerUrl( "sramp" ) );
+        mgr.installSequencers( sequencerUrl( "xsd" ) );
         final String path = importFile( "Books.xsd" );
-        modeler.createModel( path, "Xml Model" );
+        modeler.createModel( path, mgr.applicableModelTypes( path ).iterator().next() );
         final Session session = session();
         assertThat( session.getNode( path ).getNode( "Xml Model" ), notNullValue() );
         session.logout();
@@ -73,14 +72,16 @@ public class ITModeler extends BaseIntegrationTest {
     
     @Test( expected = ModelerException.class )
     public void shouldFailToCreateModelIfTypeIsInapplicable() throws Exception {
-        modeler.modelTypeManager().installSequencers( sequencerUrl( "xml" ) );
-        modeler.createModel( importFile( "LICENSE" ), "Xml Model" );
+        final ModelTypeManager mgr = modeler.modelTypeManager();
+        mgr.installSequencers( sequencerUrl( "xml" ) );
+        modeler.createModel( importFile( "LICENSE" ), mgr.modelTypes().iterator().next() );
     }
     
     @Test
     public void shouldGetApplicableModelTypes() throws Exception {
-        modeler.modelTypeManager().installSequencers( sequencerUrl( "sramp" ) );
-        modeler.modelTypeManager().installSequencers( sequencerUrl( "xsd" ) );
+        final ModelTypeManager mgr = modeler.modelTypeManager();
+        mgr.installSequencers( sequencerUrl( "sramp" ) );
+        mgr.installSequencers( sequencerUrl( "xsd" ) );
         final Set< ModelType > types = modelTypeManager.applicableModelTypes( importFile( "Books.xsd" ) );
         assertThat( types, notNullValue() );
         assertThat( types.isEmpty(), is( false ) );

@@ -74,11 +74,6 @@ public final class ModelerTest extends BaseTest {
     }
     
     @Test( expected = IllegalArgumentException.class )
-    public void shouldFailToCreateModelIfTypeIsUnknown() throws Exception {
-        modeler.createModel( importFile( "Books.xsd" ), "dummy" );
-    }
-    
-    @Test( expected = IllegalArgumentException.class )
     public void shouldFailToUploadFileIfNotFound() throws Exception {
         modeler.importFile( new File( "dummy.file" ), null );
     }
