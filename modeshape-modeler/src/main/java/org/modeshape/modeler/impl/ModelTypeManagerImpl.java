@@ -84,16 +84,6 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
         mgr = manager;
     }
     
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.modeler.ModelTypeManager#addSequencerRepository(java.lang.String)
-     */
-    @Override
-    public void addSequencerRepository( final String repositoryUrl ) {
-        sequencerRepositories.add( repositoryUrl );
-    }
-    
     public Set< ModelType > applicableModelTypes( final Node fileNode ) throws Exception {
         final Set< ModelType > applicableSequencers = new HashSet<>();
         for ( final ModelType type : mgr.modelTypeManager().modelTypes() )
@@ -257,11 +247,11 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.modeler.ModelTypeManager#removeSequencerRepository(java.lang.String)
+     * @see org.modeshape.modeler.ModelTypeManager#registerSequencerRepository(java.lang.String)
      */
     @Override
-    public void removeSequencerRepository( final String repositoryUrl ) {
-        sequencerRepositories.remove( repositoryUrl );
+    public void registerSequencerRepository( final String repositoryUrl ) {
+        sequencerRepositories.add( repositoryUrl );
     }
     
     /**
@@ -322,6 +312,16 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
     @Override
     public Set< String > sequencerRepositories() {
         return Collections.unmodifiableSet( sequencerRepositories );
+    }
+    
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.modeler.ModelTypeManager#unregisterSequencerRepository(java.lang.String)
+     */
+    @Override
+    public void unregisterSequencerRepository( final String repositoryUrl ) {
+        sequencerRepositories.remove( repositoryUrl );
     }
     
     class LibraryClassLoader extends ClassLoader {

@@ -33,8 +33,6 @@ public interface ModelTypeManager {
                                         + ModelTypeManagerImpl.MODESHAPE_GROUP;
     String MAVEN_SEQUENCER_REPOSITORY = "http://repo1.maven.org/maven2" + ModelTypeManagerImpl.MODESHAPE_GROUP;
     
-    void addSequencerRepository( final String repositoryUrl );
-    
     Set< ModelType > applicableModelTypes( final String filePath ) throws ModelerException;
     
     ModelType defaultModelType( final String filePath ) throws ModelerException;
@@ -43,11 +41,13 @@ public interface ModelTypeManager {
     
     Set< ModelType > modelTypes();
     
-    void removeSequencerRepository( final String repositoryUrl );
+    void registerSequencerRepository( final String repositoryUrl );
     
     Set< String > sequencerArchives( final String groupUrl ) throws ModelerException;
     
     Set< String > sequencerGroups( final String repositoryUrl ) throws ModelerException;
     
     Set< String > sequencerRepositories();
+    
+    void unregisterSequencerRepository( final String repositoryUrl );
 }
