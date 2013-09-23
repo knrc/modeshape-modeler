@@ -36,6 +36,9 @@ import org.modeshape.modeler.integration.BaseIntegrationTest;
 
 public class ITModeler extends BaseIntegrationTest {
     
+    private static final String XML_CONTENT = "<?xml version='1.0' encoding='UTF-8'?>";
+    private static final String XSD_CONTENT = XML_CONTENT + "<schema></schema>";
+    
     // private void createDefaultModel( final String fileName,
     // final String modelType ) throws Exception {
     // final String path = upload( fileName );
@@ -57,7 +60,7 @@ public class ITModeler extends BaseIntegrationTest {
         mgr.installSequencers( sequencerUrl( "xml" ) );
         mgr.installSequencers( sequencerUrl( "sramp" ) );
         mgr.installSequencers( sequencerUrl( "xsd" ) );
-        final String path = importFile( "Books.xsd" );
+        final String path = importContent( XSD_CONTENT );
         modeler.createModel( path, mgr.applicableModelTypes( path ).iterator().next() );
         final Session session = session();
         assertThat( session.getNode( path ).getNode( "Xml Model" ), notNullValue() );
@@ -65,16 +68,22 @@ public class ITModeler extends BaseIntegrationTest {
     }
     
     @Test( expected = ModelerException.class )
+    public void shouldFailToCreateDefaultModelIfFileIsInvalid() throws Exception {
+        modeler.modelTypeManager().installSequencers( sequencerUrl( "xml" ) );
+        modeler.createDefaultModel( importContent( XML_CONTENT + "<stuff>" ) );
+    }
+    
+    @Test( expected = ModelerException.class )
     public void shouldFailToCreateModelIfFileIsInvalid() throws Exception {
         modeler.modelTypeManager().installSequencers( sequencerUrl( "xml" ) );
-        modeler.createDefaultModel( importFile( "bad.xml" ) );
+        modeler.createModel( importContent( XML_CONTENT + "<stuff>" ), modeler.modelTypeManager().modelTypes().iterator().next() );
     }
     
     @Test( expected = ModelerException.class )
     public void shouldFailToCreateModelIfTypeIsInapplicable() throws Exception {
         final ModelTypeManager mgr = modeler.modelTypeManager();
         mgr.installSequencers( sequencerUrl( "xml" ) );
-        modeler.createModel( importFile( "LICENSE" ), mgr.modelTypes().iterator().next() );
+        modeler.createModel( importContent( "stuff" ), mgr.modelTypes().iterator().next() );
     }
     
     @Test
@@ -82,7 +91,7 @@ public class ITModeler extends BaseIntegrationTest {
         final ModelTypeManager mgr = modeler.modelTypeManager();
         mgr.installSequencers( sequencerUrl( "sramp" ) );
         mgr.installSequencers( sequencerUrl( "xsd" ) );
-        final Set< ModelType > types = modelTypeManager.applicableModelTypes( importFile( "Books.xsd" ) );
+        final Set< ModelType > types = modelTypeManager.applicableModelTypes( importContent( XSD_CONTENT ) );
         assertThat( types, notNullValue() );
         assertThat( types.isEmpty(), is( false ) );
     }

@@ -30,9 +30,11 @@ import static org.junit.Assert.assertThat;
 
 import java.io.File;
 
+import javax.jcr.Node;
 import javax.jcr.Session;
 
 import org.junit.Test;
+import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.modeler.impl.Manager;
 import org.modeshape.modeler.test.BaseTest;
 
@@ -55,7 +57,7 @@ public final class ModelerTest extends BaseTest {
     
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToCreateModelIfNoDefaultModelType() throws Exception {
-        modeler.createDefaultModel( importFile( "LICENSE" ) );
+        modeler.createDefaultModel( importContent( "stuff" ) );
     }
     
     @Test( expected = IllegalArgumentException.class )
@@ -74,13 +76,28 @@ public final class ModelerTest extends BaseTest {
     }
     
     @Test( expected = IllegalArgumentException.class )
-    public void shouldFailToUploadFileIfNotFound() throws Exception {
-        modeler.importFile( new File( "dummy.file" ), null );
+    public void shouldFailToImportContentIfNameIsEmpty() throws Exception {
+        modeler.importContent( "", stream( "stuff" ), null );
     }
     
     @Test( expected = IllegalArgumentException.class )
-    public void shouldFailToUploadIfFileIsNull() throws Exception {
-        modeler.importFile( null, null );
+    public void shouldFailToImportContentIfNameIsNull() throws Exception {
+        modeler.importContent( null, stream( "stuff" ), null );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToImportContentIfStreamIsNull() throws Exception {
+        modeler.importContent( "stuff", null, null );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToImportFileIfNotFound() throws Exception {
+        modeler.importContent( new File( "dummy.file" ), null );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToImportIfFileIsNull() throws Exception {
+        modeler.importContent( null, null );
     }
     
     @Test
@@ -114,7 +131,52 @@ public final class ModelerTest extends BaseTest {
     }
     
     @Test
-    public void shouldUploadToSuppliedPath() throws Exception {
-        importFile( "Books.xsd", "/test" );
+    public void shouldImportContent() throws Exception {
+        final String path = modeler.importContent( "stuff", stream( "stuff" ), null );
+        assertThat( path, is( "/stuff" ) );
+        final Session session = session();
+        final Node node = session.getNode( path );
+        assertThat( node, notNullValue() );
+        assertThat( node.getNode( JcrLexicon.CONTENT.getString() ), notNullValue() );
+        assertThat( node.getNode( JcrLexicon.CONTENT.getString() ).getProperty( JcrLexicon.DATA.getString() ), notNullValue() );
+        session.logout();
+    }
+    
+    @Test
+    public void shouldImportContentToSuppliedPath() throws Exception {
+        final String path = modeler.importContent( "stuff", stream( "stuff" ), "/test" );
+        assertThat( path, is( "/test/stuff" ) );
+        final Session session = session();
+        final Node node = session.getNode( path );
+        assertThat( node, notNullValue() );
+        assertThat( node.getNode( JcrLexicon.CONTENT.getString() ), notNullValue() );
+        assertThat( node.getNode( JcrLexicon.CONTENT.getString() ).getProperty( JcrLexicon.DATA.getString() ), notNullValue() );
+        session.logout();
+    }
+    
+    @Test
+    public void shouldImportFile() throws Exception {
+        final String path = modeler.importContent( new File( getClass().getClassLoader().getResource( "Books.xsd" ).toURI() ),
+                                                   null );
+        assertThat( path, is( "/Books.xsd" ) );
+        final Session session = session();
+        final Node node = session.getNode( path );
+        assertThat( node, notNullValue() );
+        assertThat( node.getNode( JcrLexicon.CONTENT.getString() ), notNullValue() );
+        assertThat( node.getNode( JcrLexicon.CONTENT.getString() ).getProperty( JcrLexicon.DATA.getString() ), notNullValue() );
+        session.logout();
+    }
+    
+    @Test
+    public void shouldImportFileToSuppliedPath() throws Exception {
+        final String path = modeler.importContent( new File( getClass().getClassLoader().getResource( "Books.xsd" ).toURI() ),
+                                                   "/test" );
+        assertThat( path, is( "/test/Books.xsd" ) );
+        final Session session = session();
+        final Node node = session.getNode( path );
+        assertThat( node, notNullValue() );
+        assertThat( node.getNode( JcrLexicon.CONTENT.getString() ), notNullValue() );
+        assertThat( node.getNode( JcrLexicon.CONTENT.getString() ).getProperty( JcrLexicon.DATA.getString() ), notNullValue() );
+        session.logout();
     }
 }
