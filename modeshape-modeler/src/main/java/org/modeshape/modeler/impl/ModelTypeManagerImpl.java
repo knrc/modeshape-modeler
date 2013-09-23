@@ -53,15 +53,16 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.modeshape.common.collection.Collections;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.JcrNtLexicon;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.ValueFactory;
 import org.modeshape.jcr.api.sequencer.Sequencer;
-import org.modeshape.modeler.ModelerException;
-import org.modeshape.modeler.ModelerI18n;
 import org.modeshape.modeler.ModelType;
 import org.modeshape.modeler.ModelTypeManager;
+import org.modeshape.modeler.ModelerException;
+import org.modeshape.modeler.ModelerI18n;
 
 /**
  * 
@@ -93,6 +94,27 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
         sequencerRepositories.add( repositoryUrl );
     }
     
+    public Set< ModelType > applicableModelTypes( final Node fileNode ) throws Exception {
+        final Set< ModelType > applicableSequencers = new HashSet<>();
+        for ( final ModelType type : mgr.modelTypeManager().modelTypes() )
+            if ( type.sequencer().isAccepted( fileNode.getNode( JcrLexicon.CONTENT.getString() )
+                                                      .getProperty( JcrLexicon.MIMETYPE.getString() ).getString() ) ) {
+                applicableSequencers.add( type );
+            }
+        return applicableSequencers;
+    }
+    
+    public Set< ModelType > applicableModelTypes( final String filePath ) throws ModelerException {
+        CheckArg.isNotEmpty( filePath, "filePath" );
+        return mgr.run( new Task< Set< ModelType > >() {
+            
+            @Override
+            public final Set< ModelType > run( final Session session ) throws Exception {
+                return applicableModelTypes( mgr.fileNode( session, filePath ) );
+            }
+        } );
+    }
+    
     private void checkHttpUrl( final String url ) {
         if ( !url.startsWith( "http" ) ) throw new IllegalArgumentException( ModelerI18n.mustBeHttpUrl.text( url ) );
     }
@@ -108,6 +130,27 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                 stream.write( buf, 0, bytesRead );
             return stream.toByteArray();
         }
+    }
+    
+    public ModelType defaultModelType( final Node fileNode,
+                                       final Set< ModelType > applicableSequencers ) throws Exception {
+        final String ext = fileNode.getName().substring( fileNode.getName().lastIndexOf( '.' ) + 1 );
+        for ( final ModelType type : applicableSequencers )
+            if ( type.sourceFileExtensions().contains( ext ) ) return type;
+        return applicableSequencers.isEmpty() ? null : applicableSequencers.iterator().next();
+    }
+    
+    public ModelType defaultModelType( final String filePath ) throws ModelerException {
+        CheckArg.isNotEmpty( filePath, "filePath" );
+        return mgr.run( new Task< ModelType >() {
+            
+            @Override
+            public ModelType run( final Session session ) throws Exception {
+                final Node node = mgr.fileNode( session, filePath );
+                final ModelType type = defaultModelType( node, applicableModelTypes( node ) );
+                return type == null ? null : type;
+            }
+        } );
     }
     
     /**

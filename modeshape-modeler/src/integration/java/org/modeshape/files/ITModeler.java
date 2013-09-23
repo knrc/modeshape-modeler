@@ -27,14 +27,13 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 
-import java.io.File;
 import java.util.Set;
 
 import javax.jcr.Session;
 
 import org.junit.Test;
-import org.modeshape.modeler.ModelerException;
 import org.modeshape.modeler.ModelType;
+import org.modeshape.modeler.ModelerException;
 import org.modeshape.modeler.integration.BaseIntegrationTest;
 
 public class ITModeler extends BaseIntegrationTest {
@@ -82,12 +81,8 @@ public class ITModeler extends BaseIntegrationTest {
     public void shouldGetApplicableModelTypes() throws Exception {
         modeler.modelTypeManager().installSequencers( sequencerUrl( "sramp" ) );
         modeler.modelTypeManager().installSequencers( sequencerUrl( "xsd" ) );
-        final Set< ModelType > types = modeler.applicableModelTypes( upload( "Books.xsd" ) );
+        final Set< ModelType > types = modelTypeManager.applicableModelTypes( upload( "Books.xsd" ) );
         assertThat( types, notNullValue() );
         assertThat( types.isEmpty(), is( false ) );
-    }
-    
-    private String upload( final String fileName ) throws Exception {
-        return modeler.upload( new File( getClass().getClassLoader().getResource( fileName ).toURI() ), null );
     }
 }

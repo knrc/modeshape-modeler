@@ -28,11 +28,11 @@ import javax.jcr.Session;
 import org.modeshape.modeler.Modeler;
 import org.modeshape.modeler.ModelerException;
 
-public class ModelerUtil {
+public class TestUtil {
     
     public static Session session( final Modeler modeler ) throws ModelerException {
         return modeler.mgr.session();
     }
     
-    private ModelerUtil() {}
+    private TestUtil() {}
 }

@@ -23,14 +23,23 @@
  */
 package org.modeshape.modeler.test;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
+
+import java.io.File;
+
+import javax.jcr.Node;
 import javax.jcr.Session;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
+import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.modeler.Modeler;
 import org.modeshape.modeler.ModelerException;
-import org.modeshape.modeler.ModelerUtil;
+import org.modeshape.modeler.TestUtil;
+import org.modeshape.modeler.impl.ModelTypeManagerImpl;
 
 /**
  * Superclass for all test classes
@@ -39,6 +48,7 @@ import org.modeshape.modeler.ModelerUtil;
 public abstract class BaseTest {
     
     protected Modeler modeler;
+    protected ModelTypeManagerImpl modelTypeManager;
     
     @After
     public void after() throws Exception {
@@ -48,9 +58,31 @@ public abstract class BaseTest {
     @Before
     public void before() {
         modeler = new Modeler();
+        modelTypeManager = ( ModelTypeManagerImpl ) modeler.modelTypeManager();
     }
     
     protected Session session() throws ModelerException {
-        return ModelerUtil.session( modeler );
+        return TestUtil.session( modeler );
+    }
+    
+    protected String upload( final String fileName ) throws Exception {
+        return upload( fileName, null );
+    }
+    
+    protected String upload( final String fileName,
+                             final String workspaceParentPath ) throws Exception {
+        final String path = modeler.upload( new File( getClass().getClassLoader().getResource( fileName ).toURI() ),
+                                            workspaceParentPath );
+        String expectedPath = ( workspaceParentPath == null ? "/" : workspaceParentPath );
+        if ( !expectedPath.endsWith( "/" ) ) expectedPath += '/';
+        expectedPath += fileName;
+        assertThat( path, is( expectedPath ) );
+        final Session session = session();
+        final Node node = session.getNode( path );
+        assertThat( node, notNullValue() );
+        assertThat( node.getNode( JcrLexicon.CONTENT.getString() ), notNullValue() );
+        assertThat( node.getNode( JcrLexicon.CONTENT.getString() ).getProperty( JcrLexicon.DATA.getString() ), notNullValue() );
+        session.logout();
+        return path;
     }
 }
