@@ -25,8 +25,6 @@ package org.modeshape.modeler;
 
 import java.io.File;
 import java.util.Calendar;
-import java.util.HashSet;
-import java.util.Set;
 
 import javax.jcr.Node;
 import javax.jcr.Session;
@@ -43,27 +41,6 @@ public final class Modeler {
     
     final Manager mgr = new Manager();
     
-    Set< ModelType > applicableModelTypes( final Node fileNode ) throws Exception {
-        final Set< ModelType > applicableSequencers = new HashSet<>();
-        for ( final ModelType type : mgr.modelTypeManager().modelTypes() )
-            if ( type.sequencer().isAccepted( fileNode.getNode( JcrLexicon.CONTENT.getString() )
-                                                      .getProperty( JcrLexicon.MIMETYPE.getString() ).getString() ) ) {
-                applicableSequencers.add( type );
-            }
-        return applicableSequencers;
-    }
-    
-    public Set< ModelType > applicableModelTypes( final String filePath ) throws ModelerException {
-        CheckArg.isNotEmpty( filePath, "filePath" );
-        return mgr.run( new Task< Set< ModelType > >() {
-            
-            @Override
-            public final Set< ModelType > run( final Session session ) throws Exception {
-                return applicableModelTypes( fileNode( session, filePath ) );
-            }
-        } );
-    }
-    
     public void createDefaultModel( final String filePath ) throws ModelerException {
         createModel( filePath, null );
     }
@@ -75,11 +52,11 @@ public final class Modeler {
             
             @Override
             public Void run( final Session session ) throws Exception {
-                final Node fileNode = fileNode( session, filePath );
+                final Node fileNode = mgr.fileNode( session, filePath );
                 ModelType modelType = null;
                 if ( modelTypeName == null ) {
                     // If no model type supplied, use default sequencer if one exists
-                    modelType = defaultModelType( fileNode, applicableModelTypes( fileNode ) );
+                    modelType = mgr.modelTypeManager().defaultModelType( fileNode, mgr.modelTypeManager().applicableModelTypes( fileNode ) );
                     if ( modelType == null ) throw new IllegalArgumentException(
                                                                                  ModelerI18n.unableToDetermineDefaultModelType.text( filePath ) );
                 } else {
@@ -111,33 +88,6 @@ public final class Modeler {
                 return null;
             }
         } );
-    }
-    
-    ModelType defaultModelType( final Node fileNode,
-                                final Set< ModelType > applicableSequencers ) throws Exception {
-        final String ext = fileNode.getName().substring( fileNode.getName().lastIndexOf( '.' ) + 1 );
-        for ( final ModelType type : applicableSequencers )
-            if ( type.sourceFileExtensions().contains( ext ) ) return type;
-        return applicableSequencers.isEmpty() ? null : applicableSequencers.iterator().next();
-    }
-    
-    public ModelType defaultModelType( final String filePath ) throws ModelerException {
-        CheckArg.isNotEmpty( filePath, "filePath" );
-        return mgr.run( new Task< ModelType >() {
-            
-            @Override
-            public ModelType run( final Session session ) throws Exception {
-                final Node node = fileNode( session, filePath );
-                final ModelType type = defaultModelType( node, applicableModelTypes( node ) );
-                return type == null ? null : type;
-            }
-        } );
-    }
-    
-    Node fileNode( final Session session,
-                   final String filePath ) throws Exception {
-        // Return an absolute path
-        return session.getNode( filePath.charAt( 0 ) == '/' ? filePath : '/' + filePath );
     }
     
     public ModelTypeManager modelTypeManager() {

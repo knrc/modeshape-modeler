@@ -25,6 +25,7 @@ package org.modeshape.modeler.impl;
 
 import java.util.concurrent.ExecutionException;
 
+import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.Session;
 
@@ -34,7 +35,6 @@ import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.NoSuchRepositoryException;
 import org.modeshape.jcr.RepositoryConfiguration;
-import org.modeshape.modeler.ModelTypeManager;
 import org.modeshape.modeler.ModelerException;
 import org.modeshape.modeler.ModelerI18n;
 
@@ -50,7 +50,13 @@ public final class Manager {
     private Repository repository;
     final ModelTypeManagerImpl modelTypeMgr = new ModelTypeManagerImpl( this );
     
-    public ModelTypeManager modelTypeManager() {
+    public Node fileNode( final Session session,
+                          final String filePath ) throws Exception {
+        // Return an absolute path
+        return session.getNode( filePath.charAt( 0 ) == '/' ? filePath : '/' + filePath );
+    }
+    
+    public ModelTypeManagerImpl modelTypeManager() {
         return modelTypeMgr;
     }
     
