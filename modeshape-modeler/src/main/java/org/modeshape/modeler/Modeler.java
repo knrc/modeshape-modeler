@@ -79,7 +79,7 @@ public final class Modeler {
                 ModelType modelType = null;
                 if ( modelTypeName == null ) {
                     // If no model type supplied, use default sequencer if one exists
-                    modelType = defaultSequencer( fileNode, applicableModelTypes( fileNode ) );
+                    modelType = defaultModelType( fileNode, applicableModelTypes( fileNode ) );
                     if ( modelType == null ) throw new IllegalArgumentException(
                                                                                  ModelerI18n.unableToDetermineDefaultModelType.text( filePath ) );
                 } else {
@@ -113,6 +113,14 @@ public final class Modeler {
         } );
     }
     
+    ModelType defaultModelType( final Node fileNode,
+                                final Set< ModelType > applicableSequencers ) throws Exception {
+        final String ext = fileNode.getName().substring( fileNode.getName().lastIndexOf( '.' ) + 1 );
+        for ( final ModelType type : applicableSequencers )
+            if ( type.sourceFileExtensions().contains( ext ) ) return type;
+        return applicableSequencers.isEmpty() ? null : applicableSequencers.iterator().next();
+    }
+    
     public ModelType defaultModelType( final String filePath ) throws ModelerException {
         CheckArg.isNotEmpty( filePath, "filePath" );
         return mgr.run( new Task< ModelType >() {
@@ -120,18 +128,10 @@ public final class Modeler {
             @Override
             public ModelType run( final Session session ) throws Exception {
                 final Node node = fileNode( session, filePath );
-                final ModelType type = defaultSequencer( node, applicableModelTypes( node ) );
+                final ModelType type = defaultModelType( node, applicableModelTypes( node ) );
                 return type == null ? null : type;
             }
         } );
-    }
-    
-    ModelType defaultSequencer( final Node fileNode,
-                                final Set< ModelType > applicableSequencers ) throws Exception {
-        final String ext = fileNode.getName().substring( fileNode.getName().lastIndexOf( '.' ) + 1 );
-        for ( final ModelType type : applicableSequencers )
-            if ( type.sourceFileExtensions().contains( ext ) ) return type;
-        return applicableSequencers.isEmpty() ? null : applicableSequencers.iterator().next();
     }
     
     Node fileNode( final Session session,
