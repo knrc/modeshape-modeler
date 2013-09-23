@@ -55,7 +55,7 @@ public final class ModelerTest extends BaseTest {
     
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToCreateModelIfNoDefaultModelType() throws Exception {
-        modeler.createDefaultModel( upload( "LICENSE" ) );
+        modeler.createDefaultModel( importFile( "LICENSE" ) );
     }
     
     @Test( expected = IllegalArgumentException.class )
@@ -75,17 +75,17 @@ public final class ModelerTest extends BaseTest {
     
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToCreateModelIfTypeIsUnknown() throws Exception {
-        modeler.createModel( upload( "Books.xsd" ), "dummy" );
+        modeler.createModel( importFile( "Books.xsd" ), "dummy" );
     }
     
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToUploadFileIfNotFound() throws Exception {
-        modeler.upload( new File( "dummy.file" ), null );
+        modeler.importFile( new File( "dummy.file" ), null );
     }
     
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToUploadIfFileIsNull() throws Exception {
-        modeler.upload( null, null );
+        modeler.importFile( null, null );
     }
     
     @Test
@@ -120,6 +120,6 @@ public final class ModelerTest extends BaseTest {
     
     @Test
     public void shouldUploadToSuppliedPath() throws Exception {
-        upload( "Books.xsd", "/test" );
+        importFile( "Books.xsd", "/test" );
     }
 }
