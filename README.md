@@ -4,7 +4,7 @@
 
 [Download latest](https://drone.io/github.com/Polyglotter/modeshape-modeler/files)
 
-ModeShape Modeler is an API that allows applications to manage files, and particularly models, in an embedded ModeShape workspace. The projrects temporarily reside here until we find an appropriate home (like in the ModeShape project).
+ModeShape Modeler is an API that allows applications to manage files, and particularly models, in an embedded ModeShape workspace. The projects temporarily reside here until we find an appropriate home (like in the ModeShape project).
 
 For more information on ModeShape Modeler, hop into our IRC chat room at irc.freenode.net#polyglotter and talk to our community of contributors and users.
 
