@@ -33,13 +33,13 @@ import org.infinispan.util.ReflectionUtil;
 import org.modeshape.jcr.ExtensionLogger;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
-import org.modeshape.modeler.ModelerException;
 import org.modeshape.modeler.ModelType;
+import org.modeshape.modeler.ModelerException;
 
 /**
  * 
  */
-final class ModelTypeImpl implements ModelType {
+public final class ModelTypeImpl implements ModelType {
     
     private final Manager mgr;
     final Class< ? > sequencerClass;
@@ -65,13 +65,6 @@ final class ModelTypeImpl implements ModelType {
         return name;
     }
     
-    /**
-     * {@inheritDoc}
-     * 
-     * @throws ModelerException
-     * @see org.modeshape.modeler.ModelType#sequencer()
-     */
-    @Override
     public Sequencer sequencer() throws ModelerException {
         return mgr.run( new Task< Sequencer >() {
             

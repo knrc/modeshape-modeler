@@ -25,13 +25,9 @@ package org.modeshape.modeler;
 
 import java.util.Set;
 
-import org.modeshape.jcr.api.sequencer.Sequencer;
-
 public interface ModelType {
     
     String name();
-    
-    Sequencer sequencer() throws ModelerException;
     
     Set< String > sourceFileExtensions();
 }
