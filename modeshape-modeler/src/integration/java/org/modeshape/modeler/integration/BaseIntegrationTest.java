@@ -31,7 +31,7 @@ import org.modeshape.modeler.test.BaseTest;
 
 public abstract class BaseIntegrationTest extends BaseTest {
     
-    protected static final String SEQUENCER_REPOSITORY = ModelTypeManager.MAVEN_SEQUENCER_REPOSITORY;
+    protected static final String SEQUENCER_REPOSITORY = ModelTypeManager.JBOSS_SEQUENCER_REPOSITORY;
     
     protected String modeShapeVersion() throws Exception {
         final Session session = session();

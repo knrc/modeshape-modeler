@@ -86,11 +86,11 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
     
     public Set< ModelType > applicableModelTypes( final Node fileNode ) throws Exception {
         final Set< ModelType > applicableSequencers = new HashSet<>();
-        for ( final ModelType type : mgr.modelTypeManager().modelTypes() )
-            if ( type.sequencer().isAccepted( fileNode.getNode( JcrLexicon.CONTENT.getString() )
-                                                      .getProperty( JcrLexicon.MIMETYPE.getString() ).getString() ) ) {
+        for ( final ModelType type : modelTypes() )
+            if ( ( ( ModelTypeImpl ) type ).sequencer()
+                                           .isAccepted( fileNode.getNode( JcrLexicon.CONTENT.getString() )
+                                                                .getProperty( JcrLexicon.MIMETYPE.getString() ).getString() ) )
                 applicableSequencers.add( type );
-            }
         return applicableSequencers;
     }
     

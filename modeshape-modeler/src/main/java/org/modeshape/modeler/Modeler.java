@@ -35,6 +35,7 @@ import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.ValueFactory;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.modeler.impl.Manager;
+import org.modeshape.modeler.impl.ModelTypeImpl;
 import org.modeshape.modeler.impl.Task;
 
 public final class Modeler {
@@ -64,21 +65,21 @@ public final class Modeler {
                 // Build the model
                 final ValueFactory valueFactory = ( ValueFactory ) session.getValueFactory();
                 final Calendar cal = Calendar.getInstance();
-                type.sequencer().execute( fileNode.getNode( JcrLexicon.CONTENT.getString() )
-                                                  .getProperty( JcrLexicon.DATA.getString() ),
-                                          fileNode.addNode( type.name() ),
-                                          new Sequencer.Context() {
-                                              
-                                              @Override
-                                              public Calendar getTimestamp() {
-                                                  return cal;
-                                              }
-                                              
-                                              @Override
-                                              public ValueFactory valueFactory() {
-                                                  return valueFactory;
-                                              }
-                                          } );
+                ( ( ModelTypeImpl ) type ).sequencer().execute( fileNode.getNode( JcrLexicon.CONTENT.getString() )
+                                                                        .getProperty( JcrLexicon.DATA.getString() ),
+                                                                fileNode.addNode( type.name() ),
+                                                                new Sequencer.Context() {
+                                                                    
+                                                                    @Override
+                                                                    public Calendar getTimestamp() {
+                                                                        return cal;
+                                                                    }
+                                                                    
+                                                                    @Override
+                                                                    public ValueFactory valueFactory() {
+                                                                        return valueFactory;
+                                                                    }
+                                                                } );
                 session.save();
                 return null;
             }
