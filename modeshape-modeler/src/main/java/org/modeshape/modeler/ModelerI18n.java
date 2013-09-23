@@ -30,6 +30,7 @@ import org.modeshape.common.i18n.I18n;
  */
 public final class ModelerI18n {
     
+    public static I18n fileNotFound;
     public static I18n modelerStarted;
     public static I18n modelerStopped;
     public static I18n mustBeHttpUrl;

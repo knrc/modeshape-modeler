@@ -24,6 +24,8 @@
 package org.modeshape.modeler;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Calendar;
 
 import javax.jcr.Node;
@@ -42,32 +44,32 @@ public final class Modeler {
     
     final Manager mgr = new Manager();
     
-    public void createDefaultModel( final String filePath ) throws ModelerException {
-        createModel( filePath, null );
+    public void createDefaultModel( final String contentPath ) throws ModelerException {
+        createModel( contentPath, null );
     }
     
-    public void createModel( final String filePath,
+    public void createModel( final String contentPath,
                              final ModelType modelType ) throws ModelerException {
-        CheckArg.isNotEmpty( filePath, "filePath" );
+        CheckArg.isNotEmpty( contentPath, "contentPath" );
         mgr.run( new Task< Void >() {
             
             @Override
             public Void run( final Session session ) throws Exception {
-                final Node fileNode = mgr.fileNode( session, filePath );
+                final Node contentNode = mgr.fileNode( session, contentPath );
                 ModelType type = modelType;
                 if ( modelType == null ) {
                     // If no model type supplied, use default model type if one exists
-                    type = mgr.modelTypeManager().defaultModelType( fileNode,
-                                                                    mgr.modelTypeManager().applicableModelTypes( fileNode ) );
+                    type = mgr.modelTypeManager().defaultModelType( contentNode,
+                                                                    mgr.modelTypeManager().applicableModelTypes( contentNode ) );
                     if ( type == null )
-                        throw new IllegalArgumentException( ModelerI18n.unableToDetermineDefaultModelType.text( filePath ) );
+                        throw new IllegalArgumentException( ModelerI18n.unableToDetermineDefaultModelType.text( contentPath ) );
                 }
                 // Build the model
                 final ValueFactory valueFactory = ( ValueFactory ) session.getValueFactory();
                 final Calendar cal = Calendar.getInstance();
-                ( ( ModelTypeImpl ) type ).sequencer().execute( fileNode.getNode( JcrLexicon.CONTENT.getString() )
-                                                                        .getProperty( JcrLexicon.DATA.getString() ),
-                                                                fileNode.addNode( type.name() ),
+                ( ( ModelTypeImpl ) type ).sequencer().execute( contentNode.getNode( JcrLexicon.CONTENT.getString() )
+                                                                           .getProperty( JcrLexicon.DATA.getString() ),
+                                                                contentNode.addNode( type.name() ),
                                                                 new Sequencer.Context() {
                                                                     
                                                                     @Override
@@ -86,9 +88,32 @@ public final class Modeler {
         } );
     }
     
-    public String importFile( final File file,
-                              final String workspaceParentPath ) throws ModelerException {
+    public String importContent( final File file,
+                                 final String workspaceParentPath ) throws ModelerException {
         CheckArg.isNotNull( file, "file" );
+        if ( !file.exists() ) throw new IllegalArgumentException( ModelerI18n.fileNotFound.text( file ) );
+        try {
+            return importContent( file.getName(), file.toURI().toURL().openStream(), workspaceParentPath );
+        } catch ( final IOException e ) {
+            throw new ModelerException( e );
+        }
+    }
+    
+    /**
+     * @param name
+     *        the name of the content as it should be stored in the repository. Must not be empty.
+     * @param stream
+     *        the content to be imported. Must not be <code>null</code>.
+     * @param workspaceParentPath
+     *        the path of the parent path where the content should be imported
+     * @return the path the to imported content
+     * @throws ModelerException
+     */
+    public String importContent( final String name,
+                                 final InputStream stream,
+                                 final String workspaceParentPath ) throws ModelerException {
+        CheckArg.isNotEmpty( name, "name" );
+        CheckArg.isNotNull( stream, "stream" );
         return mgr.run( new Task< String >() {
             
             @Override
@@ -96,7 +121,7 @@ public final class Modeler {
                 // Ensure the path is non-null, ending with a slash
                 String path = workspaceParentPath == null ? "/" : workspaceParentPath;
                 if ( !path.endsWith( "/" ) ) path += '/';
-                final Node fileNode = new JcrTools().uploadFile( session, path + file.getName(), file );
+                final Node fileNode = new JcrTools().uploadFile( session, path + name, stream );
                 // Add unstructured mix-in to allow node to contain anything else, like models created later
                 fileNode.addMixin( Manager.UNSTRUCTURED_MIXIN );
                 session.save();

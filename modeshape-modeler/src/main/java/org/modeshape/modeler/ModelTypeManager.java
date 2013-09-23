@@ -1,9 +1,9 @@
 /*
  * Polyglotter (http://polyglotter.org)
- * See the COPYRIGHT.txt file distributed with this work for information
+ * See the COPYRIGHT.txt content distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
+ * See the AUTHORS.txt content in the distribution for a full listing of 
  * individual contributors.
  *
  * Polyglotter is free software. Unless otherwise indicated, all code in Polyglotter
@@ -33,9 +33,9 @@ public interface ModelTypeManager {
                                         + ModelTypeManagerImpl.MODESHAPE_GROUP;
     String MAVEN_SEQUENCER_REPOSITORY = "http://repo1.maven.org/maven2" + ModelTypeManagerImpl.MODESHAPE_GROUP;
     
-    Set< ModelType > applicableModelTypes( final String filePath ) throws ModelerException;
+    Set< ModelType > applicableModelTypes( final String contentPath ) throws ModelerException;
     
-    ModelType defaultModelType( final String filePath ) throws ModelerException;
+    ModelType defaultModelType( final String contentPath ) throws ModelerException;
     
     void installSequencers( final String archiveUrl ) throws ModelerException;
     

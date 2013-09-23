@@ -58,25 +58,13 @@ public class ModelTypeManagerImplTest extends BaseTest {
     
     @Test
     public void shouldGetEmptyApplicableModelTypesIfFileHasUknownMimeType() throws Exception {
-        final Set< ModelType > types = modelTypeManager.applicableModelTypes( importFile( "LICENSE" ) );
+        final Set< ModelType > types = modelTypeManager.applicableModelTypes( importContent( "stuff" ) );
         assertThat( types, notNullValue() );
         assertThat( types.isEmpty(), is( true ) );
-    }
-    
-    @Test
-    public void shouldGetNoApplicableModelTypes() throws Exception {
-        final Set< ModelType > types = modelTypeManager.applicableModelTypes( importFile( "Books.xsd" ) );
-        assertThat( types, notNullValue() );
-        assertThat( types.isEmpty(), is( true ) );
-    }
-    
-    @Test
-    public void shouldGetNullDefaultModelType() throws Exception {
-        assertThat( modelTypeManager.defaultModelType( importFile( "Books.xsd" ) ), nullValue() );
     }
     
     @Test
     public void shouldGetNullDefaultModelTypeIfFileHasUknownMimeType() throws Exception {
-        assertThat( modelTypeManager.defaultModelType( importFile( "LICENSE" ) ), nullValue() );
+        assertThat( modelTypeManager.defaultModelType( importContent( "stuff" ) ), nullValue() );
     }
 }
