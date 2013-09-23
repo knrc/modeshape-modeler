@@ -104,6 +104,12 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
         return applicableSequencers;
     }
     
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.modeler.ModelTypeManager#applicableModelTypes(java.lang.String)
+     */
+    @Override
     public Set< ModelType > applicableModelTypes( final String filePath ) throws ModelerException {
         CheckArg.isNotEmpty( filePath, "filePath" );
         return mgr.run( new Task< Set< ModelType > >() {
@@ -140,6 +146,12 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
         return applicableSequencers.isEmpty() ? null : applicableSequencers.iterator().next();
     }
     
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.modeler.ModelTypeManager#defaultModelType(java.lang.String)
+     */
+    @Override
     public ModelType defaultModelType( final String filePath ) throws ModelerException {
         CheckArg.isNotEmpty( filePath, "filePath" );
         return mgr.run( new Task< ModelType >() {
