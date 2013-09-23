@@ -61,18 +61,14 @@ public abstract class BaseTest {
         modelTypeManager = ( ModelTypeManagerImpl ) modeler.modelTypeManager();
     }
     
-    protected Session session() throws ModelerException {
-        return TestUtil.session( modeler );
+    protected String importFile( final String fileName ) throws Exception {
+        return importFile( fileName, null );
     }
     
-    protected String upload( final String fileName ) throws Exception {
-        return upload( fileName, null );
-    }
-    
-    protected String upload( final String fileName,
-                             final String workspaceParentPath ) throws Exception {
-        final String path = modeler.upload( new File( getClass().getClassLoader().getResource( fileName ).toURI() ),
-                                            workspaceParentPath );
+    protected String importFile( final String fileName,
+                                 final String workspaceParentPath ) throws Exception {
+        final String path = modeler.importFile( new File( getClass().getClassLoader().getResource( fileName ).toURI() ),
+                                                workspaceParentPath );
         String expectedPath = ( workspaceParentPath == null ? "/" : workspaceParentPath );
         if ( !expectedPath.endsWith( "/" ) ) expectedPath += '/';
         expectedPath += fileName;
@@ -84,5 +80,9 @@ public abstract class BaseTest {
         assertThat( node.getNode( JcrLexicon.CONTENT.getString() ).getProperty( JcrLexicon.DATA.getString() ), notNullValue() );
         session.logout();
         return path;
+    }
+    
+    protected Session session() throws ModelerException {
+        return TestUtil.session( modeler );
     }
 }

@@ -90,24 +90,8 @@ public final class Modeler {
         } );
     }
     
-    public ModelTypeManager modelTypeManager() {
-        return mgr.modelTypeManager();
-    }
-    
-    public String modeShapeConfigurationPath() {
-        return mgr.modeShapeConfigurationPath();
-    }
-    
-    public void setModeShapeConfigurationPath( final String modeShapeConfigurationPath ) {
-        mgr.setModeShapeConfigurationPath( modeShapeConfigurationPath );
-    }
-    
-    public void stop() throws ModelerException {
-        mgr.stop();
-    }
-    
-    public String upload( final File file,
-                          final String workspaceParentPath ) throws ModelerException {
+    public String importFile( final File file,
+                              final String workspaceParentPath ) throws ModelerException {
         CheckArg.isNotNull( file, "file" );
         return mgr.run( new Task< String >() {
             
@@ -123,5 +107,21 @@ public final class Modeler {
                 return fileNode.getPath();
             }
         } );
+    }
+    
+    public ModelTypeManager modelTypeManager() {
+        return mgr.modelTypeManager();
+    }
+    
+    public String modeShapeConfigurationPath() {
+        return mgr.modeShapeConfigurationPath();
+    }
+    
+    public void setModeShapeConfigurationPath( final String modeShapeConfigurationPath ) {
+        mgr.setModeShapeConfigurationPath( modeShapeConfigurationPath );
+    }
+    
+    public void stop() throws ModelerException {
+        mgr.stop();
     }
 }

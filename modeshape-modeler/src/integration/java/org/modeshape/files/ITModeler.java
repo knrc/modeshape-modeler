@@ -58,7 +58,7 @@ public class ITModeler extends BaseIntegrationTest {
         modeler.modelTypeManager().installSequencers( sequencerUrl( "xml" ) );
         modeler.modelTypeManager().installSequencers( sequencerUrl( "sramp" ) );
         modeler.modelTypeManager().installSequencers( sequencerUrl( "xsd" ) );
-        final String path = upload( "Books.xsd" );
+        final String path = importFile( "Books.xsd" );
         modeler.createModel( path, "Xml Model" );
         final Session session = session();
         assertThat( session.getNode( path ).getNode( "Xml Model" ), notNullValue() );
@@ -68,20 +68,20 @@ public class ITModeler extends BaseIntegrationTest {
     @Test( expected = ModelerException.class )
     public void shouldFailToCreateModelIfFileIsInvalid() throws Exception {
         modeler.modelTypeManager().installSequencers( sequencerUrl( "xml" ) );
-        modeler.createDefaultModel( upload( "bad.xml" ) );
+        modeler.createDefaultModel( importFile( "bad.xml" ) );
     }
     
     @Test( expected = ModelerException.class )
     public void shouldFailToCreateModelIfTypeIsInapplicable() throws Exception {
         modeler.modelTypeManager().installSequencers( sequencerUrl( "xml" ) );
-        modeler.createModel( upload( "LICENSE" ), "Xml Model" );
+        modeler.createModel( importFile( "LICENSE" ), "Xml Model" );
     }
     
     @Test
     public void shouldGetApplicableModelTypes() throws Exception {
         modeler.modelTypeManager().installSequencers( sequencerUrl( "sramp" ) );
         modeler.modelTypeManager().installSequencers( sequencerUrl( "xsd" ) );
-        final Set< ModelType > types = modelTypeManager.applicableModelTypes( upload( "Books.xsd" ) );
+        final Set< ModelType > types = modelTypeManager.applicableModelTypes( importFile( "Books.xsd" ) );
         assertThat( types, notNullValue() );
         assertThat( types.isEmpty(), is( false ) );
     }
