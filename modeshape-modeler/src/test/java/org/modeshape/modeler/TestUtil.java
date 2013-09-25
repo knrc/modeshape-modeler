@@ -29,7 +29,7 @@ import javax.jcr.Session;
 public class TestUtil {
     
     public static Session session( final Modeler modeler ) throws ModelerException {
-        return modeler.mgr.session();
+        return modeler.manager.session();
     }
     
     private TestUtil() {}

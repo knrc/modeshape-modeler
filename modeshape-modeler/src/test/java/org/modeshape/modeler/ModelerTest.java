@@ -103,21 +103,13 @@ public final class ModelerTest extends BaseTest {
     
     @Test
     public void shouldGetChangedModeShapeConfigurationPath() {
-        modeler.setModeShapeConfigurationPath( TEST_MODESHAPE_CONFIGURATION_PATH );
-        assertThat( modeler.modeShapeConfigurationPath(), is( TEST_MODESHAPE_CONFIGURATION_PATH ) );
+        
+        assertThat( new Modeler( TEST_MODESHAPE_CONFIGURATION_PATH ).manager.modeShapeConfigurationPath, is( TEST_MODESHAPE_CONFIGURATION_PATH ) );
     }
     
     @Test
     public void shouldGetDefaultModeShapeConfigurationPathIfNotSet() {
-        assertThat( new Modeler().modeShapeConfigurationPath(), is( Manager.DEFAULT_MODESHAPE_CONFIGURATION_PATH ) );
-    }
-    
-    @Test
-    public void shouldGetDefaultModeShapeConfigurationPathIfSetToNull() {
-        modeler.setModeShapeConfigurationPath( TEST_MODESHAPE_CONFIGURATION_PATH );
-        assertThat( modeler.modeShapeConfigurationPath(), is( TEST_MODESHAPE_CONFIGURATION_PATH ) );
-        modeler.setModeShapeConfigurationPath( null );
-        assertThat( new Modeler().modeShapeConfigurationPath(), is( Manager.DEFAULT_MODESHAPE_CONFIGURATION_PATH ) );
+        assertThat( modeler.manager.modeShapeConfigurationPath, is( Manager.DEFAULT_MODESHAPE_CONFIGURATION_PATH ) );
     }
     
     @Test

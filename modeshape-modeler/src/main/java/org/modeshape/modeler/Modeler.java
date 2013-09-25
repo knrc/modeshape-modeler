@@ -45,7 +45,23 @@ import org.modeshape.modeler.impl.Task;
  */
 public final class Modeler {
     
-    final Manager mgr = new Manager();
+    final Manager manager;
+    
+    /**
+     * Uses a default ModeShape configuration.
+     */
+    public Modeler() {
+        manager = new Manager();
+    }
+    
+    /**
+     * 
+     * @param modeShapeConfigurationPath
+     *        the path to a ModeShape configuration file
+     */
+    public Modeler( final String modeShapeConfigurationPath ) {
+        manager = new Manager( modeShapeConfigurationPath );
+    }
     
     /**
      * @param contentPath
@@ -68,16 +84,16 @@ public final class Modeler {
     public void createModel( final String artifactPath,
                              final ModelType modelType ) throws ModelerException {
         CheckArg.isNotEmpty( artifactPath, "contentPath" );
-        mgr.run( new Task< Void >() {
+        manager.run( new Task< Void >() {
             
             @Override
             public Void run( final Session session ) throws Exception {
-                final Node contentNode = mgr.fileNode( session, artifactPath );
+                final Node contentNode = manager.fileNode( session, artifactPath );
                 ModelType type = modelType;
                 if ( modelType == null ) {
                     // If no model type supplied, use default model type if one exists
-                    type = mgr.modelTypeManager().defaultModelType( contentNode,
-                                                                    mgr.modelTypeManager().modelTypes( contentNode ) );
+                    type = manager.modelTypeManager().defaultModelType( contentNode,
+                                                                    manager.modelTypeManager().modelTypes( contentNode ) );
                     if ( type == null )
                         throw new IllegalArgumentException( ModelerI18n.unableToDetermineDefaultModelType.text( artifactPath ) );
                 }
@@ -141,7 +157,7 @@ public final class Modeler {
                                  final String workspaceParentPath ) throws ModelerException {
         CheckArg.isNotEmpty( name, "name" );
         CheckArg.isNotNull( stream, "stream" );
-        return mgr.run( new Task< String >() {
+        return manager.run( new Task< String >() {
             
             @Override
             public String run( final Session session ) throws Exception {
@@ -161,22 +177,7 @@ public final class Modeler {
      * @return the model type manager
      */
     public ModelTypeManager modelTypeManager() {
-        return mgr.modelTypeManager();
-    }
-    
-    /**
-     * @return the ModeShape configuration path
-     */
-    public String modeShapeConfigurationPath() {
-        return mgr.modeShapeConfigurationPath();
-    }
-    
-    /**
-     * @param modeShapeConfigurationPath
-     *        a ModeShape configuration path
-     */
-    public void setModeShapeConfigurationPath( final String modeShapeConfigurationPath ) {
-        mgr.setModeShapeConfigurationPath( modeShapeConfigurationPath );
+        return manager.modelTypeManager();
     }
     
     /**
@@ -184,6 +185,6 @@ public final class Modeler {
      *         if any problem occurs
      */
     public void stop() throws ModelerException {
-        mgr.stop();
+        manager.stop();
     }
 }
