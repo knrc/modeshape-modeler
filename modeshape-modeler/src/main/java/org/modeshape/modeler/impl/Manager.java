@@ -23,26 +23,47 @@
  */
 package org.modeshape.modeler.impl;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.concurrent.ExecutionException;
+import java.util.zip.ZipInputStream;
 
+import javax.jcr.Binary;
 import javax.jcr.Node;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.Repository;
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.ValueFormatException;
 
 import org.modeshape.common.collection.Problem;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.NoSuchRepositoryException;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.modeler.ModelerException;
 import org.modeshape.modeler.ModelerI18n;
 
+/**
+ * 
+ */
 public final class Manager {
     
+    /**
+     * 
+     */
     public static final String DEFAULT_MODESHAPE_CONFIGURATION_PATH = "jcr/modeShapeConfig.json";
     
+    /**
+     * 
+     */
     public static final String NS = "mm:";
+    
+    /**
+     * 
+     */
     public static final String UNSTRUCTURED_MIXIN = NS + "unstructured";
     
     private String modeShapeConfigurationPath = DEFAULT_MODESHAPE_CONFIGURATION_PATH;
@@ -50,12 +71,37 @@ public final class Manager {
     private Repository repository;
     final ModelTypeManagerImpl modelTypeMgr = new ModelTypeManagerImpl( this );
     
+    Binary content( final Node fileNode ) throws ValueFormatException, PathNotFoundException, RepositoryException {
+        return fileNode.getNode( JcrLexicon.CONTENT.getString() ).getProperty( JcrLexicon.DATA.getString() ).getBinary();
+    }
+    
+    byte[] content( final ZipInputStream zip ) throws IOException {
+        try ( final ByteArrayOutputStream stream = new ByteArrayOutputStream() ) {
+            final byte[] buf = new byte[ 1024 ];
+            for ( int bytesRead; ( bytesRead = zip.read( buf, 0, buf.length ) ) > -1; )
+                stream.write( buf, 0, bytesRead );
+            return stream.toByteArray();
+        }
+    }
+    
+    /**
+     * @param session
+     *        a session
+     * @param filePath
+     *        a file's repository path
+     * @return the node with the supplied filePath
+     * @throws Exception
+     *         if any problem occurs
+     */
     public Node fileNode( final Session session,
                           final String filePath ) throws Exception {
         // Return an absolute path
         return session.getNode( filePath.charAt( 0 ) == '/' ? filePath : '/' + filePath );
     }
     
+    /**
+     * @return the model type manager
+     */
     public ModelTypeManagerImpl modelTypeManager() {
         return modelTypeMgr;
     }
@@ -67,6 +113,13 @@ public final class Manager {
         return modeShapeConfigurationPath;
     }
     
+    /**
+     * @param task
+     *        a task
+     * @return the return value of the supplied task
+     * @throws ModelerException
+     *         if any problem occurs
+     */
     public < T > T run( final Task< T > task ) throws ModelerException {
         final Session session = session();
         try {
@@ -80,6 +133,11 @@ public final class Manager {
         }
     }
     
+    /**
+     * @return a new session
+     * @throws ModelerException
+     *         if any problem occurs
+     */
     public Session session() throws ModelerException {
         try {
             if ( modeShape == null ) {
@@ -105,11 +163,19 @@ public final class Manager {
         }
     }
     
+    /**
+     * @param modeShapeConfigurationPath
+     *        the path to a ModeShape configuration file
+     */
     public void setModeShapeConfigurationPath( final String modeShapeConfigurationPath ) {
         this.modeShapeConfigurationPath = modeShapeConfigurationPath == null ? DEFAULT_MODESHAPE_CONFIGURATION_PATH
                                                                             : modeShapeConfigurationPath;
     }
     
+    /**
+     * @throws ModelerException
+     *         if any problem occurs
+     */
     public void stop() throws ModelerException {
         if ( modeShape == null )
             Logger.getLogger( getClass() ).debug( "Attempt to stop ModeShape Modeler when it is already stopped" );

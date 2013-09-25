@@ -36,14 +36,11 @@ import org.junit.runners.model.InitializationError;
 /**
  * 
  */
+@SuppressWarnings( "javadoc" )
 public class TestRunner extends BlockJUnit4ClassRunner {
     
-    /**
-     * @param klass
-     * @throws InitializationError
-     */
-    public TestRunner( final Class< ? > klass ) throws InitializationError {
-        super( klass );
+    public TestRunner( final Class< ? > testClass ) throws InitializationError {
+        super( testClass );
     }
     
     /**

@@ -24,10 +24,14 @@
 
 package org.modeshape.modeler;
 
+/**
+ * 
+ */
 public class ModelerException extends Exception {
     
     /**
      * @param message
+     *        the detail message
      */
     public ModelerException( final String message ) {
         super( message );
@@ -36,16 +40,19 @@ public class ModelerException extends Exception {
     
     /**
      * @param message
+     *        the detail message
      * @param cause
+     *        the underlying Throwable that caused of this exception
      */
     public ModelerException( final String message,
-                                 final Throwable cause ) {
+                             final Throwable cause ) {
         super( message, cause );
         
     }
     
     /**
      * @param cause
+     *        the underlying Throwable that caused of this exception
      */
     public ModelerException( final Throwable cause ) {
         super( cause );

@@ -26,11 +26,11 @@ package org.modeshape.modeler.impl;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.jcr.Repository;
 import javax.jcr.Session;
 
 import org.infinispan.util.ReflectionUtil;
 import org.modeshape.jcr.ExtensionLogger;
+import org.modeshape.jcr.api.Repository;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.modeler.ModelType;
@@ -65,6 +65,11 @@ public final class ModelTypeImpl implements ModelType {
         return name;
     }
     
+    /**
+     * @return this model type's sequencer
+     * @throws ModelerException
+     *         if any problem occurs
+     */
     public Sequencer sequencer() throws ModelerException {
         return mgr.run( new Task< Sequencer >() {
             
@@ -74,7 +79,7 @@ public final class ModelTypeImpl implements ModelType {
                 // Initialize
                 ReflectionUtil.setValue( sequencer, "logger", ExtensionLogger.getLogger( sequencer.getClass() ) );
                 ReflectionUtil.setValue( sequencer, "repositoryName",
-                                         session.getRepository().getDescriptor( Repository.REP_NAME_DESC ) );
+                                         session.getRepository().getDescriptor( Repository.REPOSITORY_NAME ) );
                 ReflectionUtil.setValue( sequencer, "name", sequencer.getClass().getSimpleName() );
                 sequencer.initialize( session.getWorkspace().getNamespaceRegistry(),
                                       ( NodeTypeManager ) session.getWorkspace().getNodeTypeManager() );

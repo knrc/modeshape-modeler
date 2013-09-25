@@ -34,16 +34,17 @@ import org.junit.Test;
 import org.modeshape.modeler.ModelType;
 import org.modeshape.modeler.test.BaseTest;
 
+@SuppressWarnings( "javadoc" )
 public class ModelTypeManagerImplTest extends BaseTest {
     
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetApplicableModelTypesIfPathIsEmpty() throws Exception {
-        modelTypeManager.applicableModelTypes( "" );
+        modelTypeManager.modelTypes( "" );
     }
     
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetApplicableModelTypesIfPathIsNull() throws Exception {
-        modelTypeManager.applicableModelTypes( ( String ) null );
+        modelTypeManager.modelTypes( ( String ) null );
     }
     
     @Test( expected = IllegalArgumentException.class )
@@ -58,7 +59,7 @@ public class ModelTypeManagerImplTest extends BaseTest {
     
     @Test
     public void shouldGetEmptyApplicableModelTypesIfFileHasUknownMimeType() throws Exception {
-        final Set< ModelType > types = modelTypeManager.applicableModelTypes( importContent( "stuff" ) );
+        final Set< ModelType > types = modelTypeManager.modelTypes( importContent( "stuff" ) );
         assertThat( types, notNullValue() );
         assertThat( types.isEmpty(), is( true ) );
     }
