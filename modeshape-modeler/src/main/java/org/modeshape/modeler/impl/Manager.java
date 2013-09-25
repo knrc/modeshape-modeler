@@ -66,10 +66,26 @@ public final class Manager {
      */
     public static final String UNSTRUCTURED_MIXIN = NS + "unstructured";
     
-    private String modeShapeConfigurationPath = DEFAULT_MODESHAPE_CONFIGURATION_PATH;
+    @SuppressWarnings( "javadoc" )
+    public final String modeShapeConfigurationPath;
     private ModeShapeEngine modeShape;
     private Repository repository;
     final ModelTypeManagerImpl modelTypeMgr = new ModelTypeManagerImpl( this );
+    
+    /**
+     * Uses a default ModeShape configuration.
+     */
+    public Manager() {
+        modeShapeConfigurationPath = DEFAULT_MODESHAPE_CONFIGURATION_PATH;
+    }
+    
+    /**
+     * @param modeShapeConfigurationPath
+     *        the path to a ModeShape configuration file
+     */
+    public Manager( final String modeShapeConfigurationPath ) {
+        this.modeShapeConfigurationPath = modeShapeConfigurationPath;
+    }
     
     Binary content( final Node fileNode ) throws ValueFormatException, PathNotFoundException, RepositoryException {
         return fileNode.getNode( JcrLexicon.CONTENT.getString() ).getProperty( JcrLexicon.DATA.getString() ).getBinary();
@@ -104,13 +120,6 @@ public final class Manager {
      */
     public ModelTypeManagerImpl modelTypeManager() {
         return modelTypeMgr;
-    }
-    
-    /**
-     * @return the path to the ModeShape configuration file. Default is {@value #DEFAULT_MODESHAPE_CONFIGURATION_PATH}.
-     */
-    public String modeShapeConfigurationPath() {
-        return modeShapeConfigurationPath;
     }
     
     /**
@@ -161,15 +170,6 @@ public final class Manager {
         } catch ( final Throwable e ) {
             throw new ModelerException( e );
         }
-    }
-    
-    /**
-     * @param modeShapeConfigurationPath
-     *        the path to a ModeShape configuration file
-     */
-    public void setModeShapeConfigurationPath( final String modeShapeConfigurationPath ) {
-        this.modeShapeConfigurationPath = modeShapeConfigurationPath == null ? DEFAULT_MODESHAPE_CONFIGURATION_PATH
-                                                                            : modeShapeConfigurationPath;
     }
     
     /**
