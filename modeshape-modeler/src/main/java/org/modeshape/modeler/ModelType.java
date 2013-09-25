@@ -25,9 +25,18 @@ package org.modeshape.modeler;
 
 import java.util.Set;
 
+/**
+ * 
+ */
 public interface ModelType {
     
+    /**
+     * @return the name of this model type
+     */
     String name();
     
+    /**
+     * @return the source file extensions associated with this model type
+     */
     Set< String > sourceFileExtensions();
 }

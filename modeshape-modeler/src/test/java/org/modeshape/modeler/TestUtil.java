@@ -25,9 +25,7 @@ package org.modeshape.modeler;
 
 import javax.jcr.Session;
 
-import org.modeshape.modeler.Modeler;
-import org.modeshape.modeler.ModelerException;
-
+@SuppressWarnings( "javadoc" )
 public class TestUtil {
     
     public static Session session( final Modeler modeler ) throws ModelerException {

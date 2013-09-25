@@ -40,29 +40,46 @@ import org.modeshape.modeler.impl.Manager;
 import org.modeshape.modeler.impl.ModelTypeImpl;
 import org.modeshape.modeler.impl.Task;
 
+/**
+ * 
+ */
 public final class Modeler {
     
     final Manager mgr = new Manager();
     
+    /**
+     * @param contentPath
+     *        the repository path to an artifact
+     * @throws ModelerException
+     *         if any problem occurs
+     */
     public void createDefaultModel( final String contentPath ) throws ModelerException {
         createModel( contentPath, null );
     }
     
-    public void createModel( final String contentPath,
+    /**
+     * @param artifactPath
+     *        the repository path to an artifact
+     * @param modelType
+     *        the type of model to be created for the supplied artifact
+     * @throws ModelerException
+     *         if any problem occurs
+     */
+    public void createModel( final String artifactPath,
                              final ModelType modelType ) throws ModelerException {
-        CheckArg.isNotEmpty( contentPath, "contentPath" );
+        CheckArg.isNotEmpty( artifactPath, "contentPath" );
         mgr.run( new Task< Void >() {
             
             @Override
             public Void run( final Session session ) throws Exception {
-                final Node contentNode = mgr.fileNode( session, contentPath );
+                final Node contentNode = mgr.fileNode( session, artifactPath );
                 ModelType type = modelType;
                 if ( modelType == null ) {
                     // If no model type supplied, use default model type if one exists
                     type = mgr.modelTypeManager().defaultModelType( contentNode,
-                                                                    mgr.modelTypeManager().applicableModelTypes( contentNode ) );
+                                                                    mgr.modelTypeManager().modelTypes( contentNode ) );
                     if ( type == null )
-                        throw new IllegalArgumentException( ModelerI18n.unableToDetermineDefaultModelType.text( contentPath ) );
+                        throw new IllegalArgumentException( ModelerI18n.unableToDetermineDefaultModelType.text( artifactPath ) );
                 }
                 // Build the model
                 final ValueFactory valueFactory = ( ValueFactory ) session.getValueFactory();
@@ -88,6 +105,15 @@ public final class Modeler {
         } );
     }
     
+    /**
+     * @param file
+     *        the file to be imported. Must not be <code>null</code>.
+     * @param workspaceParentPath
+     *        the path of the parent path where the file should be imported
+     * @return the repository path the to imported content
+     * @throws ModelerException
+     *         if any problem occurs
+     */
     public String importContent( final File file,
                                  final String workspaceParentPath ) throws ModelerException {
         CheckArg.isNotNull( file, "file" );
@@ -101,13 +127,14 @@ public final class Modeler {
     
     /**
      * @param name
-     *        the name of the content as it should be stored in the repository. Must not be empty.
+     *        the name of the artifact as it should be stored in the repository. Must not be empty.
      * @param stream
-     *        the content to be imported. Must not be <code>null</code>.
+     *        the artifact's content to be imported. Must not be <code>null</code>.
      * @param workspaceParentPath
      *        the path of the parent path where the content should be imported
-     * @return the path the to imported content
+     * @return the repository path the to imported artifact
      * @throws ModelerException
+     *         if any problem occurs
      */
     public String importContent( final String name,
                                  final InputStream stream,
@@ -130,18 +157,32 @@ public final class Modeler {
         } );
     }
     
+    /**
+     * @return the model type manager
+     */
     public ModelTypeManager modelTypeManager() {
         return mgr.modelTypeManager();
     }
     
+    /**
+     * @return the ModeShape configuration path
+     */
     public String modeShapeConfigurationPath() {
         return mgr.modeShapeConfigurationPath();
     }
     
+    /**
+     * @param modeShapeConfigurationPath
+     *        a ModeShape configuration path
+     */
     public void setModeShapeConfigurationPath( final String modeShapeConfigurationPath ) {
         mgr.setModeShapeConfigurationPath( modeShapeConfigurationPath );
     }
     
+    /**
+     * @throws ModelerException
+     *         if any problem occurs
+     */
     public void stop() throws ModelerException {
         mgr.stop();
     }

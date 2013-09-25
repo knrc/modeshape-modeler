@@ -27,16 +27,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Modifier;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLStreamHandler;
+import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
 import javax.jcr.Binary;
@@ -55,12 +56,10 @@ import org.modeshape.common.collection.Collections;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrLexicon;
-import org.modeshape.jcr.JcrNtLexicon;
-import org.modeshape.jcr.api.JcrTools;
-import org.modeshape.jcr.api.ValueFactory;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.modeler.ModelType;
 import org.modeshape.modeler.ModelTypeManager;
+import org.modeshape.modeler.Modeler;
 import org.modeshape.modeler.ModelerException;
 import org.modeshape.modeler.ModelerI18n;
 
@@ -69,46 +68,29 @@ import org.modeshape.modeler.ModelerI18n;
  */
 public final class ModelTypeManagerImpl implements ModelTypeManager {
     
+    static final Logger LOGGER = Logger.getLogger( ModelTypeManagerImpl.class );
+    
+    /**
+     * 
+     */
     public static final String MODESHAPE_GROUP = "/org/modeshape/";
     
-    private static final String LIBRARY_PATH = '/' + Manager.NS + "library/";
+    static final URL[] EMPTY_URLS = new URL[ 0 ];
     
     final Manager mgr;
     private final Set< String > sequencerRepositories = new HashSet<>( Arrays.asList( JBOSS_SEQUENCER_REPOSITORY,
                                                                                       MAVEN_SEQUENCER_REPOSITORY ) );
     final Set< ModelType > modelTypes = new HashSet<>();
-    final LibraryClassLoader classLoader = new LibraryClassLoader();
+    final LibraryClassLoader libraryClassLoader = new LibraryClassLoader();
     final Set< String > potentialSequencerClassNames = new HashSet<>();
-    
-    public ModelTypeManagerImpl( final Manager manager ) {
-        mgr = manager;
-    }
-    
-    public Set< ModelType > applicableModelTypes( final Node fileNode ) throws Exception {
-        final Set< ModelType > applicableSequencers = new HashSet<>();
-        for ( final ModelType type : modelTypes() )
-            if ( ( ( ModelTypeImpl ) type ).sequencer()
-                                           .isAccepted( fileNode.getNode( JcrLexicon.CONTENT.getString() )
-                                                                .getProperty( JcrLexicon.MIMETYPE.getString() ).getString() ) )
-                applicableSequencers.add( type );
-        return applicableSequencers;
-    }
+    Path library;
     
     /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.modeler.ModelTypeManager#applicableModelTypes(java.lang.String)
+     * @param manager
+     *        The {@link Modeler Modeler's} manager
      */
-    @Override
-    public Set< ModelType > applicableModelTypes( final String filePath ) throws ModelerException {
-        CheckArg.isNotEmpty( filePath, "filePath" );
-        return mgr.run( new Task< Set< ModelType > >() {
-            
-            @Override
-            public final Set< ModelType > run( final Session session ) throws Exception {
-                return applicableModelTypes( mgr.fileNode( session, filePath ) );
-            }
-        } );
+    public ModelTypeManagerImpl( final Manager manager ) {
+        mgr = manager;
     }
     
     private void checkHttpUrl( final String url ) {
@@ -122,18 +104,27 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
     byte[] content( final ZipInputStream zip ) throws IOException {
         try ( final ByteArrayOutputStream stream = new ByteArrayOutputStream() ) {
             final byte[] buf = new byte[ 1024 ];
-            for ( int bytesRead; ( bytesRead = zip.read( buf, 0, buf.length ) ) > -1; )
+            for ( int bytesRead; ( bytesRead = zip.read( buf, 0, buf.length ) ) > 0; )
                 stream.write( buf, 0, bytesRead );
             return stream.toByteArray();
         }
     }
     
+    /**
+     * @param fileNode
+     *        the file node
+     * @param sequencers
+     *        the sequencers applicable to the supplied file node
+     * @return the default model type for the supplied file node
+     * @throws Exception
+     *         if any problem occurs
+     */
     public ModelType defaultModelType( final Node fileNode,
-                                       final Set< ModelType > applicableSequencers ) throws Exception {
+                                       final Set< ModelType > sequencers ) throws Exception {
         final String ext = fileNode.getName().substring( fileNode.getName().lastIndexOf( '.' ) + 1 );
-        for ( final ModelType type : applicableSequencers )
+        for ( final ModelType type : sequencers )
             if ( type.sourceFileExtensions().contains( ext ) ) return type;
-        return applicableSequencers.isEmpty() ? null : applicableSequencers.iterator().next();
+        return sequencers.isEmpty() ? null : sequencers.iterator().next();
     }
     
     /**
@@ -149,7 +140,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
             @Override
             public ModelType run( final Session session ) throws Exception {
                 final Node node = mgr.fileNode( session, filePath );
-                final ModelType type = defaultModelType( node, applicableModelTypes( node ) );
+                final ModelType type = defaultModelType( node, modelTypes( node ) );
                 return type == null ? null : type;
             }
         } );
@@ -163,75 +154,61 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
     @Override
     public void installSequencers( final String archiveUrl ) throws ModelerException {
         checkHttpUrl( archiveUrl );
-        mgr.run( new Task< Void >() {
-            
-            private void installSequencers( final Node jarNode ) throws Exception {
-                if ( jarNode.getName().contains( "sequencer" ) )
-                    try ( final ZipInputStream jar = new ZipInputStream( content( jarNode ).getStream() ) ) {
-                        for ( ZipEntry entry = jar.getNextEntry(); entry != null; entry = jar.getNextEntry() ) {
-                            final String name = entry.getName().replace( '/', '.' );
-                            if ( entry.isDirectory() ) continue;
-                            classLoader.jarsByClass.put( entry.getName(), jarNode.getName() );
-                            if ( entry.getName().endsWith( ".class" ) )
-                                potentialSequencerClassNames.add( name.substring( 0, name.length() - 6 ) );
-                        }
-                    }
+        if ( LOGGER.isDebugEnabled() ) LOGGER.debug( "Installing sequencers from: " + archiveUrl );
+        try {
+            if ( library == null ) {
+                library = Files.createTempDirectory( null );
+                library.toFile().deleteOnExit();
             }
-            
-            @Override
-            public Void run( final Session session ) throws Exception {
-                final String path = LIBRARY_PATH + archiveUrl.substring( archiveUrl.lastIndexOf( '/' ) + 1 );
-                if ( session.nodeExists( path ) ) return null;
-                final JcrTools tools = new JcrTools();
-                final Node fileNode = tools.uploadFile( session, path, new URL( archiveUrl ) );
-                // Determine if we're dealing with a simple jar or an archive of jars
-                boolean archiveOfJars = false;
-                final Binary content = content( fileNode );
-                try ( final ZipInputStream zip = new ZipInputStream( content.getStream() ) ) {
-                    for ( ZipEntry entry = zip.getNextEntry(); entry != null; entry = zip.getNextEntry() ) {
-                        if ( entry.isDirectory() ) continue;
-                        if ( entry.getName().endsWith( ".class" ) ) break;
-                        if ( entry.getName().endsWith( ".jar" ) ) {
-                            archiveOfJars = true;
-                            break;
+            final Path archivePath = library.resolve( archiveUrl.substring( archiveUrl.lastIndexOf( '/' ) + 1 ) );
+            try ( InputStream stream = new URL( archiveUrl ).openStream() ) {
+                Files.copy( stream, archivePath );
+            }
+            try ( final ZipFile archive = new ZipFile( archivePath.toFile() ) ) {
+                for ( final Enumeration< ? extends ZipEntry > archiveIter = archive.entries(); archiveIter.hasMoreElements(); ) {
+                    final ZipEntry archiveEntry = archiveIter.nextElement();
+                    if ( archiveEntry.isDirectory() ) continue;
+                    String name = archiveEntry.getName().toLowerCase();
+                    if ( name.contains( "test" ) || name.contains( "source" ) || !name.endsWith( ".jar" ) ) continue;
+                    final Path jarPath = library.resolve( archiveEntry.getName().substring( archiveEntry.getName().lastIndexOf( '/' ) + 1 ) );
+                    if ( jarPath.toFile().exists() ) {
+                        if ( LOGGER.isDebugEnabled() ) LOGGER.debug( "Jar already exists: " + jarPath );
+                        continue;
+                    }
+                    try ( InputStream stream = archive.getInputStream( archiveEntry ) ) {
+                        Files.copy( stream, jarPath );
+                    }
+                    jarPath.toFile().deleteOnExit();
+                    libraryClassLoader.addURL( jarPath.toUri().toURL() );
+                    if ( LOGGER.isDebugEnabled() ) LOGGER.debug( "Installed jar: " + jarPath );
+                    try ( final ZipFile jar = new ZipFile( jarPath.toFile() ) ) {
+                        for ( final Enumeration< ? extends ZipEntry > jarIter = jar.entries(); jarIter.hasMoreElements(); ) {
+                            final ZipEntry jarEntry = jarIter.nextElement();
+                            if ( jarEntry.isDirectory() ) continue;
+                            name = jarEntry.getName();
+                            if ( jarPath.getFileName().toString().contains( "sequencer" ) && name.endsWith( "Sequencer.class" ) ) {
+                                potentialSequencerClassNames.add( name.replace( '/', '.' )
+                                                                      .substring( 0, name.length() - ".class".length() ) );
+                                if ( LOGGER.isDebugEnabled() ) LOGGER.debug( "Potential sequencer: " + name );
+                            }
                         }
                     }
                 }
-                if ( archiveOfJars ) {
-                    try ( final ZipInputStream zip = new ZipInputStream( content.getStream() ) ) {
-                        for ( ZipEntry entry = zip.getNextEntry(); entry != null; entry = zip.getNextEntry() ) {
-                            if ( entry.isDirectory() ) continue;
-                            String name = entry.getName().toLowerCase();
-                            if ( name.contains( "test" ) || name.contains( "source" ) || !name.endsWith( ".jar" ) ) continue;
-                            name = entry.getName().substring( entry.getName().lastIndexOf( '/' ) + 1 );
-                            final Node jarNode = tools.findOrCreateNode( session.getRootNode(),
-                                                                         LIBRARY_PATH + name,
-                                                                         JcrNtLexicon.FOLDER.getString(),
-                                                                         JcrNtLexicon.FILE.getString() );
-                            final Node contentNode = tools.findOrCreateChild( jarNode,
-                                                                              JcrLexicon.CONTENT.getString(),
-                                                                              JcrNtLexicon.RESOURCE.getString() );
-                            contentNode.setProperty( JcrLexicon.DATA.getString(),
-                                                     ( ( ValueFactory ) session.getValueFactory() ).createBinary( content( zip ) ) );
-                            installSequencers( jarNode );
-                        }
-                    }
-                    fileNode.remove();
-                } else installSequencers( fileNode );
-                session.save();
                 for ( final Iterator< String > iter = potentialSequencerClassNames.iterator(); iter.hasNext(); )
                     try {
-                        final Class< ? > sequencerClass = classLoader.loadClass( iter.next() );
+                        final Class< ? > sequencerClass = libraryClassLoader.loadClass( iter.next() );
                         if ( Sequencer.class.isAssignableFrom( sequencerClass )
                              && !Modifier.isAbstract( sequencerClass.getModifiers() ) )
                             modelTypes.add( new ModelTypeImpl( mgr, sequencerClass ) );
                         iter.remove();
-                    } catch ( final NoClassDefFoundError ignored ) {
+                    } catch ( final NoClassDefFoundError | ClassNotFoundException ignored ) {
                         // Class will be re-tested as a Sequencer when the next archive is installed
                     }
-                return null;
             }
-        } );
+            archivePath.toFile().delete();
+        } catch ( final IOException e ) {
+            throw new ModelerException( e );
+        }
     }
     
     /**
@@ -242,6 +219,40 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
     @Override
     public Set< ModelType > modelTypes() {
         return Collections.unmodifiableSet( modelTypes );
+    }
+    
+    /**
+     * @param fileNode
+     *        the file node
+     * @return the model types applicable to the supplied file node
+     * @throws Exception
+     *         if any problem occurs
+     */
+    public Set< ModelType > modelTypes( final Node fileNode ) throws Exception {
+        final Set< ModelType > applicableSequencers = new HashSet<>();
+        for ( final ModelType type : modelTypes() )
+            if ( ( ( ModelTypeImpl ) type ).sequencer()
+                                           .isAccepted( fileNode.getNode( JcrLexicon.CONTENT.getString() )
+                                                                .getProperty( JcrLexicon.MIMETYPE.getString() ).getString() ) )
+                applicableSequencers.add( type );
+        return applicableSequencers;
+    }
+    
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.modeler.ModelTypeManager#modelTypes(java.lang.String)
+     */
+    @Override
+    public Set< ModelType > modelTypes( final String filePath ) throws ModelerException {
+        CheckArg.isNotEmpty( filePath, "filePath" );
+        return mgr.run( new Task< Set< ModelType > >() {
+            
+            @Override
+            public final Set< ModelType > run( final Session session ) throws Exception {
+                return modelTypes( mgr.fileNode( session, filePath ) );
+            }
+        } );
     }
     
     /**
@@ -324,114 +335,15 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
         sequencerRepositories.remove( repositoryUrl );
     }
     
-    class LibraryClassLoader extends ClassLoader {
-        
-        final ConcurrentHashMap< String, String > jarsByClass = new ConcurrentHashMap<>();
-        final URLStreamHandler urlStreamHandler = new URLStreamHandler() {
-            
-            @Override
-            protected URLConnection openConnection( final URL url ) {
-                return new URLConnection( url ) {
-                    
-                    InputStream zip;
-                    ZipEntry zipEntry;
-                    
-                    @Override
-                    public void connect() throws IOException {
-                        if ( connected ) return;
-                        try {
-                            zip = mgr.run( new Task< InputStream >() {
-                                
-                                @Override
-                                public InputStream run( final Session session ) throws Exception {
-                                    final String path = getURL().getPath();
-                                    final ZipInputStream zip =
-                                        new ZipInputStream( content( session.getNode( LIBRARY_PATH + jarsByClass.get( path ) ) ).getStream() );
-                                    for ( ZipEntry entry = zip.getNextEntry(); entry != null; entry = zip.getNextEntry() ) {
-                                        if ( entry.getName().equals( path ) ) {
-                                            zipEntry = entry;
-                                            return zip;
-                                        }
-                                    }
-                                    zip.close();
-                                    return null;
-                                }
-                            } );
-                            connected = true;
-                        } catch ( final ModelerException e ) {
-                            if ( e.getCause() instanceof IOException ) throw ( IOException ) e.getCause();
-                            throw new IOException( url.getPath(), e );
-                        }
-                    }
-                    
-                    @Override
-                    public int getContentLength() {
-                        return ( int ) zipEntry.getSize();
-                    }
-                    
-                    @Override
-                    public String getContentType() {
-                        String type = guessContentTypeFromName( zipEntry.getName() );
-                        if ( type == null )
-                            try {
-                                if ( !connected ) connect();
-                                if ( zip.markSupported() ) type = guessContentTypeFromStream( zip );
-                            } catch ( final IOException ignored ) {}
-                        return type;
-                    }
-                    
-                    @Override
-                    public InputStream getInputStream() throws IOException {
-                        if ( !connected ) connect();
-                        return zip;
-                    }
-                    
-                    @Override
-                    public long getLastModified() {
-                        return zipEntry.getTime();
-                    }
-                };
-            }
-        };
+    class LibraryClassLoader extends URLClassLoader {
         
         LibraryClassLoader() {
-            super( ModelTypeManagerImpl.this.getClass().getClassLoader() );
+            super( EMPTY_URLS, LibraryClassLoader.class.getClassLoader() );
         }
         
         @Override
-        protected Class< ? > findClass( final String name ) throws ClassNotFoundException {
-            try {
-                return mgr.run( new Task< Class< ? > >() {
-                    
-                    @SuppressWarnings( { "synthetic-access", "resource" } )
-                    @Override
-                    public Class< ? > run( final Session session ) throws Exception {
-                        final String path = name.replace( '.', '/' ) + ".class";
-                        try ( final ZipInputStream zip =
-                            new ZipInputStream( content( session.getNode( LIBRARY_PATH + jarsByClass.get( path ) ) ).getStream() ) ) {
-                            for ( ZipEntry entry = zip.getNextEntry(); entry != null; entry = zip.getNextEntry() ) {
-                                if ( !entry.getName().equals( path ) ) continue;
-                                final byte[] contents = content( zip );
-                                return defineClass( name, contents, 0, contents.length );
-                            }
-                        }
-                        throw new ClassNotFoundException( name );
-                    }
-                } );
-            } catch ( final ModelerException e ) {
-                if ( e.getCause() instanceof ClassNotFoundException ) throw ( ClassNotFoundException ) e.getCause();
-                throw new ClassNotFoundException( name, e );
-            }
-        }
-        
-        @Override
-        protected URL findResource( final String name ) {
-            try {
-                return new URL( null, "resource:" + name, urlStreamHandler );
-            } catch ( final MalformedURLException e ) {
-                Logger.getLogger( getClass() ).error( e, ModelerI18n.unableToFindResource, name );
-            }
-            return null;
+        protected void addURL( final URL url ) {
+            super.addURL( url );
         }
     }
 }

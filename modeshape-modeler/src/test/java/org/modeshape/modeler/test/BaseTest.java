@@ -40,6 +40,7 @@ import org.modeshape.modeler.impl.ModelTypeManagerImpl;
  * Superclass for all test classes
  */
 @RunWith( TestRunner.class )
+@SuppressWarnings( "javadoc" )
 public abstract class BaseTest {
     
     protected Modeler modeler;

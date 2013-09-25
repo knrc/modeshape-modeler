@@ -25,7 +25,18 @@ package org.modeshape.modeler.impl;
 
 import javax.jcr.Session;
 
+/**
+ * @param <T>
+ *        the task's return value
+ */
 public interface Task< T > {
     
+    /**
+     * @param session
+     *        a new session
+     * @return the task's return value
+     * @throws Exception
+     *         if any problem occurs
+     */
     T run( Session session ) throws Exception;
 }

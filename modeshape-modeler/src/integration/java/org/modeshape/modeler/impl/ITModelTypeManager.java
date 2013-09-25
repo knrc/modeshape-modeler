@@ -26,8 +26,6 @@ package org.modeshape.modeler.impl;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
-import java.util.Map;
-
 import org.junit.Test;
 import org.modeshape.modeler.ModelTypeManager;
 import org.modeshape.modeler.integration.BaseIntegrationTest;
@@ -35,6 +33,7 @@ import org.modeshape.modeler.integration.BaseIntegrationTest;
 /**
  * Tests for {@link ModelTypeManagerImpl}.
  */
+@SuppressWarnings( "javadoc" )
 public class ITModelTypeManager extends BaseIntegrationTest {
     
     private ModelTypeManager modelTypes;
@@ -71,17 +70,5 @@ public class ITModelTypeManager extends BaseIntegrationTest {
         final String version = modeShapeVersion();
         modelTypes.installSequencers( SEQUENCER_REPOSITORY + "modeshape-sequencer-zip/" + version + "/modeshape-sequencer-zip-"
                                       + version + ".jar" );
-    }
-    
-    @Test
-    public void shouldNotInstallDuplicatejars() throws Exception {
-        final String version = modeShapeVersion();
-        modelTypes.installSequencers( SEQUENCER_REPOSITORY + "modeshape-sequencer-zip/" + version + "/modeshape-sequencer-zip-"
-                                      + version + ".jar" );
-        final Map< String, String > jarsByClass = ( ( ModelTypeManagerImpl ) modeler.modelTypeManager() ).classLoader.jarsByClass;
-        final int size = jarsByClass.size();
-        modelTypes.installSequencers( SEQUENCER_REPOSITORY + "modeshape-sequencer-zip/" + version + "/modeshape-sequencer-zip-"
-                                      + version + ".jar" );
-        assertThat( jarsByClass.size(), is( size ) );
     }
 }

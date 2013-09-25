@@ -41,6 +41,7 @@ import org.modeshape.modeler.test.BaseTest;
 /**
  * Tests for {@link Modeler}.
  */
+@SuppressWarnings( "javadoc" )
 public final class ModelerTest extends BaseTest {
     
     private static final String TEST_MODESHAPE_CONFIGURATION_PATH = "testModeShapeConfig.json";

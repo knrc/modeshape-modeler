@@ -29,6 +29,7 @@ import javax.jcr.Session;
 import org.modeshape.modeler.ModelTypeManager;
 import org.modeshape.modeler.test.BaseTest;
 
+@SuppressWarnings( "javadoc" )
 public abstract class BaseIntegrationTest extends BaseTest {
     
     protected static final String SEQUENCER_REPOSITORY = ModelTypeManager.JBOSS_SEQUENCER_REPOSITORY;

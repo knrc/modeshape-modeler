@@ -28,6 +28,7 @@ import org.modeshape.common.i18n.I18n;
 /**
  * Internationalized string constants, in alphabetical order, for the <strong>ModeShape Modeler</strong> project.
  */
+@SuppressWarnings( "javadoc" )
 public final class ModelerI18n {
     
     public static I18n fileNotFound;
@@ -35,7 +36,6 @@ public final class ModelerI18n {
     public static I18n modelerStopped;
     public static I18n mustBeHttpUrl;
     public static I18n unableToDetermineDefaultModelType;
-    public static I18n unableToFindResource;
     
     static {
         try {

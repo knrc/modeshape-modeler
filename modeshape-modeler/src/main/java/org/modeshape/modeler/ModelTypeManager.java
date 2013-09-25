@@ -25,29 +25,91 @@ package org.modeshape.modeler;
 
 import java.util.Set;
 
+import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.modeler.impl.ModelTypeManagerImpl;
 
+/**
+ * 
+ */
 public interface ModelTypeManager {
     
+    /**
+     * 
+     */
     String JBOSS_SEQUENCER_REPOSITORY = "https://repository.jboss.org/nexus/content/groups/public-jboss"
                                         + ModelTypeManagerImpl.MODESHAPE_GROUP;
+    
+    /**
+     * 
+     */
     String MAVEN_SEQUENCER_REPOSITORY = "http://repo1.maven.org/maven2" + ModelTypeManagerImpl.MODESHAPE_GROUP;
     
-    Set< ModelType > applicableModelTypes( final String contentPath ) throws ModelerException;
-    
+    /**
+     * @param contentPath
+     *        the repository path to an artifact's content
+     * @return the default model type for the content at the supplied path
+     * @throws ModelerException
+     *         if any problem occurs
+     */
     ModelType defaultModelType( final String contentPath ) throws ModelerException;
     
+    /**
+     * @param archiveUrl
+     *        a URL to a sequencer archive in an on-line <a href="http://maven.apache.org">Maven</a> {@link Sequencer} repository
+     * @throws ModelerException
+     *         if any problem occurs
+     */
     void installSequencers( final String archiveUrl ) throws ModelerException;
     
+    /**
+     * @return the available model types
+     */
     Set< ModelType > modelTypes();
     
+    /**
+     * @param contentPath
+     *        the repository path to an artifact's content
+     * @return the model types applicable to the content at the supplied path
+     * @throws ModelerException
+     *         if any problem occurs
+     */
+    Set< ModelType > modelTypes( final String contentPath ) throws ModelerException;
+    
+    /**
+     * @param repositoryUrl
+     *        a URL to an on-line <a href="http://maven.apache.org">Maven</a> {@link Sequencer} repository
+     */
     void registerSequencerRepository( final String repositoryUrl );
     
+    /**
+     * @param groupUrl
+     *        a URL to a group of sequencer archives in an on-line <a href="http://maven.apache.org">Maven</a> {@link Sequencer}
+     *        repository
+     * @return the sequencer archive URLs for the group with the supplied URL
+     * @throws ModelerException
+     *         if any problem occurs
+     */
     Set< String > sequencerArchives( final String groupUrl ) throws ModelerException;
     
+    /**
+     * @param repositoryUrl
+     *        a URL to an on-line <a href="http://maven.apache.org">Maven</a> {@link Sequencer} repository
+     * @return the sequencer group URLs for the repository with the supplied URL
+     * @throws ModelerException
+     *         if any problem occurs
+     */
     Set< String > sequencerGroups( final String repositoryUrl ) throws ModelerException;
     
+    /**
+     * @return the {@link #registerSequencerRepository(String) registered} <a href="http://maven.apache.org">Maven</a>
+     *         {@link Sequencer} repository URLs
+     */
     Set< String > sequencerRepositories();
     
+    /**
+     * @param repositoryUrl
+     *        a URL to a {@link #registerSequencerRepository(String) registered} on-line <a href="http://maven.apache.org">Maven</a>
+     *        {@link Sequencer} repository
+     */
     void unregisterSequencerRepository( final String repositoryUrl );
 }
