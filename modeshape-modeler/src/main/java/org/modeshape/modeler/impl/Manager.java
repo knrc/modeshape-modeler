@@ -122,6 +122,31 @@ public final class Manager {
         return modelTypeMgr;
     }
     
+    Repository repository() throws ModelerException {
+        if ( modeShape == null ) {
+            try {
+                modeShape = new ModeShapeEngine();
+                modeShape.start();
+                final RepositoryConfiguration config = RepositoryConfiguration.read( modeShapeConfigurationPath );
+                final Problems problems = config.validate();
+                if ( problems.hasProblems() ) {
+                    for ( final Problem problem : problems )
+                        Logger.getLogger( getClass() ).error( problem.getMessage(), problem.getThrowable() );
+                    throw problems.iterator().next().getThrowable();
+                }
+                try {
+                    repository = modeShape.getRepository( config.getName() );
+                } catch ( final NoSuchRepositoryException err ) {
+                    repository = modeShape.deploy( config );
+                }
+                Logger.getLogger( getClass() ).info( ModelerI18n.modelerStarted );
+            } catch ( final Throwable e ) {
+                throw new ModelerException( e );
+            }
+        }
+        return repository;
+    }
+    
     /**
      * @param task
      *        a task
@@ -149,24 +174,7 @@ public final class Manager {
      */
     public Session session() throws ModelerException {
         try {
-            if ( modeShape == null ) {
-                modeShape = new ModeShapeEngine();
-                modeShape.start();
-                final RepositoryConfiguration config = RepositoryConfiguration.read( modeShapeConfigurationPath );
-                final Problems problems = config.validate();
-                if ( problems.hasProblems() ) {
-                    for ( final Problem problem : problems )
-                        Logger.getLogger( getClass() ).error( problem.getMessage(), problem.getThrowable() );
-                    throw problems.iterator().next().getThrowable();
-                }
-                try {
-                    repository = modeShape.getRepository( config.getName() );
-                } catch ( final NoSuchRepositoryException err ) {
-                    repository = modeShape.deploy( config );
-                }
-                Logger.getLogger( getClass() ).info( ModelerI18n.modelerStarted );
-            }
-            return repository.login( "default" );
+            return repository().login( "default" );
         } catch ( final Throwable e ) {
             throw new ModelerException( e );
         }

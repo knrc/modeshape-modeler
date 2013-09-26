@@ -54,12 +54,17 @@ public interface ModelTypeManager {
     ModelType defaultModelType( final String contentPath ) throws ModelerException;
     
     /**
-     * @param archiveUrl
-     *        a URL to a sequencer archive in an on-line <a href="http://maven.apache.org">Maven</a> {@link Sequencer} repository
+     * @param repositoryUrl
+     *        a {@link #sequencerRepositories() URL} to an on-line <a href="http://maven.apache.org">Maven</a> {@link Sequencer}
+     *        repository
+     * @param group
+     *        the name of an available {@link #sequencerGroups(String) group} of sequencers from an on-line <a
+     *        href="http://maven.apache.org">Maven</a> {@link Sequencer} repository
      * @throws ModelerException
      *         if any problem occurs
      */
-    void installSequencers( final String archiveUrl ) throws ModelerException;
+    void installSequencers( final String repositoryUrl,
+                            final String group ) throws ModelerException;
     
     /**
      * @return the available model types
@@ -82,19 +87,10 @@ public interface ModelTypeManager {
     void registerSequencerRepository( final String repositoryUrl );
     
     /**
-     * @param groupUrl
-     *        a URL to a group of sequencer archives in an on-line <a href="http://maven.apache.org">Maven</a> {@link Sequencer}
-     *        repository
-     * @return the sequencer archive URLs for the group with the supplied URL
-     * @throws ModelerException
-     *         if any problem occurs
-     */
-    Set< String > sequencerArchives( final String groupUrl ) throws ModelerException;
-    
-    /**
      * @param repositoryUrl
-     *        a URL to an on-line <a href="http://maven.apache.org">Maven</a> {@link Sequencer} repository
-     * @return the sequencer group URLs for the repository with the supplied URL
+     *        a {@link #sequencerRepositories() URL} to an on-line <a href="http://maven.apache.org">Maven</a> {@link Sequencer}
+     *        repository
+     * @return the available sequencer groups for the repository with the supplied URL
      * @throws ModelerException
      *         if any problem occurs
      */

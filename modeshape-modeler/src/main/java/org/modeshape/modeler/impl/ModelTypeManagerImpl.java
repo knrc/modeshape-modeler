@@ -77,7 +77,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
     
     static final URL[] EMPTY_URLS = new URL[ 0 ];
     
-    final Manager mgr;
+    final Manager manager;
     private final Set< String > sequencerRepositories = new HashSet<>( Arrays.asList( JBOSS_SEQUENCER_REPOSITORY,
                                                                                       MAVEN_SEQUENCER_REPOSITORY ) );
     final Set< ModelType > modelTypes = new HashSet<>();
@@ -90,7 +90,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
      *        The {@link Modeler Modeler's} manager
      */
     public ModelTypeManagerImpl( final Manager manager ) {
-        mgr = manager;
+        this.manager = manager;
     }
     
     private void checkHttpUrl( final String url ) {
@@ -135,11 +135,11 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
     @Override
     public ModelType defaultModelType( final String filePath ) throws ModelerException {
         CheckArg.isNotEmpty( filePath, "filePath" );
-        return mgr.run( new Task< ModelType >() {
+        return manager.run( new Task< ModelType >() {
             
             @Override
             public ModelType run( final Session session ) throws Exception {
-                final Node node = mgr.fileNode( session, filePath );
+                final Node node = manager.fileNode( session, filePath );
                 final ModelType type = defaultModelType( node, modelTypes( node ) );
                 return type == null ? null : type;
             }
@@ -149,19 +149,22 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.modeler.ModelTypeManager#installSequencers(java.lang.String)
+     * @see org.modeshape.modeler.ModelTypeManager#installSequencers(java.lang.String, java.lang.String)
      */
     @Override
-    public void installSequencers( final String archiveUrl ) throws ModelerException {
-        checkHttpUrl( archiveUrl );
-        if ( LOGGER.isDebugEnabled() ) LOGGER.debug( "Installing sequencers from: " + archiveUrl );
+    public void installSequencers( final String repositoryUrl,
+                                   final String group ) throws ModelerException {
+        CheckArg.isNotEmpty( group, "group" );
+        if ( LOGGER.isDebugEnabled() ) LOGGER.debug( "Installing sequencers from group " + group );
         try {
             if ( library == null ) {
                 library = Files.createTempDirectory( null );
                 library.toFile().deleteOnExit();
             }
-            final Path archivePath = library.resolve( archiveUrl.substring( archiveUrl.lastIndexOf( '/' ) + 1 ) );
-            try ( InputStream stream = new URL( archiveUrl ).openStream() ) {
+            final String version = manager.repository().getDescriptor( Repository.REP_VERSION_DESC );
+            final String archiveName = "modeshape-sequencer-" + group + "-" + version + "-module-with-dependencies.zip";
+            final Path archivePath = library.resolve( archiveName );
+            try ( InputStream stream = new URL( repositoryUrl + "modeshape-sequencer-" + group + '/' + version + '/' + archiveName ).openStream() ) {
                 Files.copy( stream, archivePath );
             }
             try ( final ZipFile archive = new ZipFile( archivePath.toFile() ) ) {
@@ -199,7 +202,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                         final Class< ? > sequencerClass = libraryClassLoader.loadClass( iter.next() );
                         if ( Sequencer.class.isAssignableFrom( sequencerClass )
                              && !Modifier.isAbstract( sequencerClass.getModifiers() ) )
-                            modelTypes.add( new ModelTypeImpl( mgr, sequencerClass ) );
+                            modelTypes.add( new ModelTypeImpl( manager, sequencerClass ) );
                         iter.remove();
                     } catch ( final NoClassDefFoundError | ClassNotFoundException ignored ) {
                         // Class will be re-tested as a Sequencer when the next archive is installed
@@ -246,11 +249,11 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
     @Override
     public Set< ModelType > modelTypes( final String filePath ) throws ModelerException {
         CheckArg.isNotEmpty( filePath, "filePath" );
-        return mgr.run( new Task< Set< ModelType > >() {
+        return manager.run( new Task< Set< ModelType > >() {
             
             @Override
             public final Set< ModelType > run( final Session session ) throws Exception {
-                return modelTypes( mgr.fileNode( session, filePath ) );
+                return modelTypes( manager.fileNode( session, filePath ) );
             }
         } );
     }
@@ -268,51 +271,23 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.modeler.ModelTypeManager#sequencerArchives(java.lang.String)
-     */
-    @Override
-    public Set< String > sequencerArchives( final String groupUrl ) throws ModelerException {
-        checkHttpUrl( groupUrl );
-        final String versionUrl = mgr.run( new Task< String >() {
-            
-            @Override
-            public String run( final Session session ) {
-                final String url = groupUrl.endsWith( "/" ) ? groupUrl.substring( 0, groupUrl.length() - 1 ) : groupUrl;
-                final String version = session.getRepository().getDescriptor( Repository.REP_VERSION_DESC );
-                return url + '/' + ( url.endsWith( version ) ? "" : version + '/' );
-            }
-        } );
-        final Set< String > urls = new HashSet<>();
-        try {
-            final Document doc = Jsoup.connect( versionUrl ).get();
-            final Elements elements = doc.getElementsMatchingOwnText( "\\.(zip|jar)$" );
-            for ( final Element element : elements )
-                if ( !element.ownText().contains( "test" ) && !element.ownText().contains( "source" ) )
-                    urls.add( element.absUrl( "href" ) );
-        } catch ( final IOException e ) {
-            throw new ModelerException( e );
-        }
-        return urls;
-    }
-    
-    /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.modeler.ModelTypeManager#sequencerGroups(java.lang.String)
      */
     @Override
     public Set< String > sequencerGroups( final String repositoryUrl ) throws ModelerException {
         checkHttpUrl( repositoryUrl );
-        final Set< String > urls = new HashSet<>();
+        final Set< String > groups = new HashSet<>();
         try {
             final Document doc = Jsoup.connect( repositoryUrl ).get();
-            final Elements elements = doc.getElementsMatchingOwnText( "sequencer" );
-            for ( final Element element : elements )
-                urls.add( element.absUrl( "href" ) );
+            final Elements elements = doc.getElementsMatchingOwnText( "sequencer-" );
+            for ( final Element element : elements ) {
+                final String href = element.attr( "href" );
+                groups.add( href.substring( href.indexOf( "sequencer-" ) + "sequencer-".length(), href.lastIndexOf( '/' ) ) );
+            }
         } catch ( final IOException e ) {
             throw new ModelerException( e );
         }
-        return urls;
+        return groups;
     }
     
     /**

@@ -23,9 +23,6 @@
  */
 package org.modeshape.modeler.integration;
 
-import javax.jcr.Repository;
-import javax.jcr.Session;
-
 import org.modeshape.modeler.ModelTypeManager;
 import org.modeshape.modeler.test.BaseTest;
 
@@ -33,19 +30,6 @@ import org.modeshape.modeler.test.BaseTest;
 public abstract class BaseIntegrationTest extends BaseTest {
     
     protected static final String SEQUENCER_REPOSITORY = ModelTypeManager.JBOSS_SEQUENCER_REPOSITORY;
-    
-    protected String modeShapeVersion() throws Exception {
-        final Session session = session();
-        try {
-            return session.getRepository().getDescriptor( Repository.REP_VERSION_DESC );
-        } finally {
-            session.logout();
-        }
-    }
-    
-    protected String sequencerUrl( final String type ) throws Exception {
-        final String version = modeShapeVersion();
-        return SEQUENCER_REPOSITORY + "modeshape-sequencer-" + type + '/' + version + "/modeshape-sequencer-" + type + '-'
-               + version + "-module-with-dependencies.zip";
-    }
+    protected static final String XML_CONTENT = "<?xml version='1.0' encoding='UTF-8'?>";
+    protected static final String XSD_CONTENT = XML_CONTENT + "<schema></schema>";
 }
