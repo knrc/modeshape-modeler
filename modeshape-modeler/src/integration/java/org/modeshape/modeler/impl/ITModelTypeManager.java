@@ -24,9 +24,13 @@
 package org.modeshape.modeler.impl;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 
+import java.util.Set;
+
 import org.junit.Test;
+import org.modeshape.modeler.ModelType;
 import org.modeshape.modeler.ModelTypeManager;
 import org.modeshape.modeler.integration.BaseIntegrationTest;
 
@@ -45,8 +49,12 @@ public class ITModelTypeManager extends BaseIntegrationTest {
     }
     
     @Test
-    public void shouldGetSequencerArchives() throws Exception {
-        assertThat( modelTypes.sequencerArchives( SEQUENCER_REPOSITORY + "modeshape-sequencer-zip/" ).isEmpty(), is( false ) );
+    public void shouldGetApplicableModelTypes() throws Exception {
+        modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "sramp" );
+        modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "xsd" );
+        final Set< ModelType > types = modelTypeManager.modelTypes( importContent( XSD_CONTENT ) );
+        assertThat( types, notNullValue() );
+        assertThat( types.isEmpty(), is( false ) );
     }
     
     @Test
@@ -61,14 +69,7 @@ public class ITModelTypeManager extends BaseIntegrationTest {
     }
     
     @Test
-    public void shouldInstallSequencerArchiveOfJars() throws Exception {
-        modelTypes.installSequencers( sequencerUrl( "java" ) );
-    }
-    
-    @Test
-    public void shouldInstallSequencerjar() throws Exception {
-        final String version = modeShapeVersion();
-        modelTypes.installSequencers( SEQUENCER_REPOSITORY + "modeshape-sequencer-zip/" + version + "/modeshape-sequencer-zip-"
-                                      + version + ".jar" );
+    public void shouldInstallSequencer() throws Exception {
+        modelTypes.installSequencers( SEQUENCER_REPOSITORY, "java" );
     }
 }

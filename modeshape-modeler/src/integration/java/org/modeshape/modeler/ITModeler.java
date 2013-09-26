@@ -24,10 +24,7 @@
 package org.modeshape.modeler;
 
 import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
-
-import java.util.Set;
 
 import javax.jcr.Session;
 
@@ -36,9 +33,6 @@ import org.modeshape.modeler.integration.BaseIntegrationTest;
 
 @SuppressWarnings( "javadoc" )
 public class ITModeler extends BaseIntegrationTest {
-    
-    private static final String XML_CONTENT = "<?xml version='1.0' encoding='UTF-8'?>";
-    private static final String XSD_CONTENT = XML_CONTENT + "<schema></schema>";
     
     // private void createDefaultModel( final String fileName,
     // final String modelType ) throws Exception {
@@ -57,9 +51,9 @@ public class ITModeler extends BaseIntegrationTest {
     
     @Test
     public void shouldCreateModelOfSuppliedType() throws Exception {
-        modelTypeManager.installSequencers( sequencerUrl( "xml" ) );
-        modelTypeManager.installSequencers( sequencerUrl( "sramp" ) );
-        modelTypeManager.installSequencers( sequencerUrl( "xsd" ) );
+        modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "xml" );
+        modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "sramp" );
+        modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "xsd" );
         final String path = importContent( XSD_CONTENT );
         ModelType modelType = null;
         for ( final ModelType type : modelTypeManager.modelTypes( path ) ) {
@@ -76,28 +70,19 @@ public class ITModeler extends BaseIntegrationTest {
     
     @Test( expected = ModelerException.class )
     public void shouldFailToCreateDefaultModelIfFileIsInvalid() throws Exception {
-        modelTypeManager.installSequencers( sequencerUrl( "xml" ) );
+        modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "xml" );
         modeler.createDefaultModel( importContent( XML_CONTENT + "<stuff>" ) );
     }
     
     @Test( expected = ModelerException.class )
     public void shouldFailToCreateModelIfFileIsInvalid() throws Exception {
-        modelTypeManager.installSequencers( sequencerUrl( "xml" ) );
+        modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "xml" );
         modeler.createModel( importContent( XML_CONTENT + "<stuff>" ), modelTypeManager.modelTypes().iterator().next() );
     }
     
     @Test( expected = ModelerException.class )
     public void shouldFailToCreateModelIfTypeIsInapplicable() throws Exception {
-        modelTypeManager.installSequencers( sequencerUrl( "xml" ) );
+        modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "xml" );
         modeler.createModel( importContent( "stuff" ), modelTypeManager.modelTypes().iterator().next() );
-    }
-    
-    @Test
-    public void shouldGetApplicableModelTypes() throws Exception {
-        modelTypeManager.installSequencers( sequencerUrl( "sramp" ) );
-        modelTypeManager.installSequencers( sequencerUrl( "xsd" ) );
-        final Set< ModelType > types = modelTypeManager.modelTypes( importContent( XSD_CONTENT ) );
-        assertThat( types, notNullValue() );
-        assertThat( types.isEmpty(), is( false ) );
     }
 }
