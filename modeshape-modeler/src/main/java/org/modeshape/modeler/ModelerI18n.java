@@ -23,7 +23,7 @@
  */
 package org.modeshape.modeler;
 
-import org.modeshape.common.i18n.I18n;
+import org.polyglotter.common.I18n;
 
 /**
  * Internationalized string constants, in alphabetical order, for the <strong>ModeShape Modeler</strong> project.
@@ -31,17 +31,9 @@ import org.modeshape.common.i18n.I18n;
 @SuppressWarnings( "javadoc" )
 public final class ModelerI18n {
     
-    public static I18n fileNotFound;
-    public static I18n modelerStarted;
-    public static I18n modelerStopped;
-    public static I18n mustBeHttpUrl;
-    public static I18n unableToDetermineDefaultModelType;
-    
-    static {
-        try {
-            I18n.initialize( ModelerI18n.class );
-        } catch ( final Exception err ) {
-            System.err.println( err );
-        }
-    }
+    public static I18n fileNotFound = new I18n( "File not found: %s" );
+    public static I18n modelerStarted = new I18n( "ModeShape Modeler started" );
+    public static I18n modelerStopped = new I18n( "ModeShape Modeler stopped" );
+    public static I18n mustBeHttpUrl = new I18n( "Must be an HTTP URL: %s" );
+    public static I18n unableToDetermineDefaultModelType = new I18n( "Unable to determine default model type for file %s" );
 }

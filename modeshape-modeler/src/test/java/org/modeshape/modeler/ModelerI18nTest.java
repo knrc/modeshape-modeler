@@ -23,47 +23,7 @@
  */
 package org.modeshape.modeler;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import org.polyglotter.common.BaseI8nTest;
 
-import java.io.InputStream;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
-
-import org.junit.Test;
-import org.modeshape.common.i18n.I18n;
-
-/**
- * Tests for {@link ModelerI18n}.
- */
 @SuppressWarnings( "javadoc" )
-public class ModelerI18nTest {
-    
-    @Test
-    public void shouldHaveConstantsForAllMessages() throws Exception {
-        final Properties props = new Properties();
-        try ( InputStream reader
-                        = getClass().getClassLoader().getResourceAsStream( ModelerI18n.class.getName().replace( '.', '/' )
-                                                                           + ".properties" ) ) {
-            props.load( reader );
-        }
-        final Set< String > constants = new HashSet<>();
-        for ( final Field field : ModelerI18n.class.getFields() )
-            if ( Modifier.isStatic( field.getModifiers() ) && I18n.class.isAssignableFrom( field.getType() ) )
-                constants.add( field.getName() );
-        for ( final Object key : props.keySet() )
-            assertThat( "Unused message: " + key, constants.contains( key ), is( true ) );
-    }
-    
-    @Test
-    public void shouldHaveMessagesForAllConstants() throws Exception {
-        for ( final Field field : ModelerI18n.class.getFields() ) {
-            if ( !Modifier.isStatic( field.getModifiers() ) || !( I18n.class.isAssignableFrom( field.getType() ) ) ) return;
-            final String message = field.get( null ).toString();
-            assertThat( message, message.startsWith( "<" ), is( false ) );
-        }
-    }
-}
+public class ModelerI18nTest extends BaseI8nTest {}

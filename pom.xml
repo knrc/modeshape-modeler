@@ -7,7 +7,8 @@
   <version>0.0.1-SNAPSHOT</version>
   <packaging>pom</packaging>
 
-  <name>modeshape</name>
+  <name>ModeShape Modeler</name>
+  <description>ModeShape Modeler is a library for managing files and models in an embedded ModeShape workspace</description>
   <inceptionYear>2013</inceptionYear>
 
   <organization>
@@ -17,15 +18,17 @@
 
   <licenses>
     <license>
-      <name>Apache License Version 2.0</name>
-      <url>http://repository.jboss.org/licenses/apache-2.0.txt</url>
+      <name>GNU Lesser General Public License</name>
+      <url>http://repository.jboss.org/licenses/lgpl-2.1.txt</url>
+      <!--url>http://www.gnu.org/licenses/lgpl.html</url-->
       <distribution>repo</distribution>
+      <comments>A business-friendly OSS license</comments>
     </license>
   </licenses>
 
   <issueManagement>
     <system>GitHub</system>
-    <url>http://issues.jboss.org/browse/Polyglotter</url>
+    <url>https://github.com/Polyglotter/modeshape-modeler/issues</url>
   </issueManagement>
 
   <scm>
@@ -270,6 +273,14 @@
   <dependencyManagement>
     <dependencies>
 
+      <!-- Polyglotter -->
+      <dependency>
+        <groupId>org.polyglotter</groupId>
+        <artifactId>polyglotter-common</artifactId>
+        <version>${project.version}</version>
+        <scope>compile</scope>
+      </dependency>
+
       <!-- ModeShape -->
       <dependency>
         <groupId>org.modeshape.bom</groupId>
@@ -376,8 +387,23 @@
 
   <!-- modules in alphabetical order -->
   <modules>
-    
     <module>modeshape-modeler</module>
   </modules>
+  
+  <dependencies>
+    <dependency>
+      <groupId>org.polyglotter</groupId>
+      <artifactId>polyglotter-common</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.polyglotter</groupId>
+      <artifactId>polyglotter-common</artifactId>
+      <version>${project.version}</version> <!--$NO-MVN-MAN-VER$-->
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+  
 </project>
 

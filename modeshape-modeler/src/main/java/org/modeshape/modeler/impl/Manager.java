@@ -38,13 +38,14 @@ import javax.jcr.ValueFormatException;
 
 import org.modeshape.common.collection.Problem;
 import org.modeshape.common.collection.Problems;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.NoSuchRepositoryException;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.modeler.ModelerException;
 import org.modeshape.modeler.ModelerI18n;
+import org.polyglotter.common.CommonI18n;
+import org.polyglotter.common.Logger;
 
 /**
  * 
@@ -131,7 +132,7 @@ public final class Manager {
                 final Problems problems = config.validate();
                 if ( problems.hasProblems() ) {
                     for ( final Problem problem : problems )
-                        Logger.getLogger( getClass() ).error( problem.getMessage(), problem.getThrowable() );
+                        Logger.getLogger( getClass() ).error( problem.getThrowable(), CommonI18n.text, problem.getMessage().text() );
                     throw problems.iterator().next().getThrowable();
                 }
                 try {
