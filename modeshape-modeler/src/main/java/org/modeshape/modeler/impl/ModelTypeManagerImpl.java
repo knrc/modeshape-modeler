@@ -53,7 +53,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.modeshape.common.collection.Collections;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.api.sequencer.Sequencer;
@@ -62,6 +61,7 @@ import org.modeshape.modeler.ModelTypeManager;
 import org.modeshape.modeler.Modeler;
 import org.modeshape.modeler.ModelerException;
 import org.modeshape.modeler.ModelerI18n;
+import org.polyglotter.common.Logger;
 
 /**
  * 
@@ -164,7 +164,8 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
             final String version = manager.repository().getDescriptor( Repository.REP_VERSION_DESC );
             final String archiveName = "modeshape-sequencer-" + group + "-" + version + "-module-with-dependencies.zip";
             final Path archivePath = library.resolve( archiveName );
-            try ( InputStream stream = new URL( repositoryUrl + "modeshape-sequencer-" + group + '/' + version + '/' + archiveName ).openStream() ) {
+            try ( InputStream stream =
+                new URL( repositoryUrl + "modeshape-sequencer-" + group + '/' + version + '/' + archiveName ).openStream() ) {
                 Files.copy( stream, archivePath );
             }
             try ( final ZipFile archive = new ZipFile( archivePath.toFile() ) ) {
@@ -173,7 +174,8 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                     if ( archiveEntry.isDirectory() ) continue;
                     String name = archiveEntry.getName().toLowerCase();
                     if ( name.contains( "test" ) || name.contains( "source" ) || !name.endsWith( ".jar" ) ) continue;
-                    final Path jarPath = library.resolve( archiveEntry.getName().substring( archiveEntry.getName().lastIndexOf( '/' ) + 1 ) );
+                    final Path jarPath =
+                        library.resolve( archiveEntry.getName().substring( archiveEntry.getName().lastIndexOf( '/' ) + 1 ) );
                     if ( jarPath.toFile().exists() ) {
                         if ( LOGGER.isDebugEnabled() ) LOGGER.debug( "Jar already exists: " + jarPath );
                         continue;
