@@ -57,14 +57,14 @@ public class ITModeler extends BaseIntegrationTest {
         final String path = importContent( XSD_CONTENT );
         ModelType modelType = null;
         for ( final ModelType type : modelTypeManager.modelTypes( path ) ) {
-            if ( type.name().startsWith( "Xsd" ) ) {
+            if ( type.name().equals( "org.modeshape.sequencer.xsd.Xsd" ) ) {
                 modelType = type;
                 break;
             }
         }
         modeler.createModel( path, modelType );
         final Session session = session();
-        assertThat( session.getNode( path ).getNodes( "* Model" ).hasNext(), is( true ) );
+        assertThat( session.getNode( path ).hasNode( "org.modeshape.sequencer.xsd.Xsd" ), is( true ) );
         session.logout();
     }
     

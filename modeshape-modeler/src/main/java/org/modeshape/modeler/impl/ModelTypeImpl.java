@@ -50,9 +50,8 @@ public final class ModelTypeImpl implements ModelType {
                    final Class< ? > sequencerClass ) {
         mgr = manager;
         this.sequencerClass = sequencerClass;
-        name = sequencerClass.getSimpleName();
-        name = name.endsWith( "Sequencer" ) ? name.substring( 0, name.length() - "Sequencer".length() ) + " Model" : name
-                                                                                                                     + " Model";
+        name = sequencerClass.getName();
+        name = name.endsWith( "Sequencer" ) ? name.substring( 0, name.length() - "Sequencer".length() ) : name;
     }
     
     /**
