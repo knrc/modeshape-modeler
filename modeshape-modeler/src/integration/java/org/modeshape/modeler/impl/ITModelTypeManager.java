@@ -40,16 +40,8 @@ import org.modeshape.modeler.integration.BaseIntegrationTest;
 @SuppressWarnings( "javadoc" )
 public class ITModelTypeManager extends BaseIntegrationTest {
     
-    private ModelTypeManager modelTypes;
-    
-    @Override
-    public void before() {
-        super.before();
-        modelTypes = modeler.modelTypeManager();
-    }
-    
     @Test
-    public void shouldGetApplicableModelTypes() throws Exception {
+    public void shouldGetApplicablemodelTypeManager() throws Exception {
         modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "sramp" );
         modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "xsd" );
         final Set< ModelType > types = modelTypeManager.modelTypes( importContent( XSD_CONTENT ) );
@@ -59,17 +51,25 @@ public class ITModelTypeManager extends BaseIntegrationTest {
     
     @Test
     public void shouldGetSequencerGroups() throws Exception {
-        assertThat( modelTypes.sequencerGroups( SEQUENCER_REPOSITORY ).isEmpty(), is( false ) );
+        assertThat( modelTypeManager.sequencerGroups( SEQUENCER_REPOSITORY ).isEmpty(), is( false ) );
     }
     
     @Test
     public void shouldIniitializeSequencerRepositories() {
-        assertThat( modelTypes.sequencerRepositories().contains( ModelTypeManager.JBOSS_SEQUENCER_REPOSITORY ), is( true ) );
-        assertThat( modelTypes.sequencerRepositories().contains( ModelTypeManager.MAVEN_SEQUENCER_REPOSITORY ), is( true ) );
+        assertThat( modelTypeManager.sequencerRepositories().contains( ModelTypeManager.JBOSS_SEQUENCER_REPOSITORY ), is( true ) );
+        assertThat( modelTypeManager.sequencerRepositories().contains( ModelTypeManager.MAVEN_SEQUENCER_REPOSITORY ), is( true ) );
     }
     
     @Test
     public void shouldInstallSequencer() throws Exception {
-        modelTypes.installSequencers( SEQUENCER_REPOSITORY, "java" );
+        final Set< String > potentialSequencerClassNames = modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "java" );
+        assertThat( potentialSequencerClassNames.isEmpty(), is( true ) );
+        assertThat( modelTypeManager.modelTypes().isEmpty(), is( false ) );
+    }
+    
+    @Test
+    public void shouldReturnUninstantiablePotentialSequencerClassNamesIfInstallingSequencerWithUninstalledDependencies() throws Exception {
+        final Set< String > potentialSequencerClassNames = modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "xsd" );
+        assertThat( potentialSequencerClassNames.isEmpty(), is( false ) );
     }
 }

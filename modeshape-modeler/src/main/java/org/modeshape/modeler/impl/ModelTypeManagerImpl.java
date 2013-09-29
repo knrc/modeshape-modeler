@@ -152,8 +152,8 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
      * @see org.modeshape.modeler.ModelTypeManager#installSequencers(java.lang.String, java.lang.String)
      */
     @Override
-    public void installSequencers( final String repositoryUrl,
-                                   final String group ) throws ModelerException {
+    public Set< String > installSequencers( final String repositoryUrl,
+                                            final String group ) throws ModelerException {
         CheckArg.isNotEmpty( group, "group" );
         if ( LOGGER.isDebugEnabled() ) LOGGER.debug( "Installing sequencers from group " + group );
         try {
@@ -211,6 +211,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                     }
             }
             archivePath.toFile().delete();
+            return potentialSequencerClassNames;
         } catch ( final IOException e ) {
             throw new ModelerException( e );
         }

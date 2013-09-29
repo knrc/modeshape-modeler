@@ -60,11 +60,12 @@ public interface ModelTypeManager {
      * @param group
      *        the name of an available {@link #sequencerGroups(String) group} of sequencers from an on-line <a
      *        href="http://maven.apache.org">Maven</a> {@link Sequencer} repository
+     * @return the set of names of potential sequencer classes that could not be instantiated, usually due to missing dependencies.
      * @throws ModelerException
      *         if any problem occurs
      */
-    void installSequencers( final String repositoryUrl,
-                            final String group ) throws ModelerException;
+    Set< String > installSequencers( final String repositoryUrl,
+                                     final String group ) throws ModelerException;
     
     /**
      * @return the available model types
