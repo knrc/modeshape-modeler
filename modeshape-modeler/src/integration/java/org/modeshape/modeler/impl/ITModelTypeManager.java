@@ -25,13 +25,18 @@ package org.modeshape.modeler.impl;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 
 import java.util.Set;
 
+import javax.jcr.Node;
+import javax.jcr.Session;
+
 import org.junit.Test;
 import org.modeshape.modeler.ModelType;
 import org.modeshape.modeler.ModelTypeManager;
+import org.modeshape.modeler.ModelerException;
 import org.modeshape.modeler.integration.BaseIntegrationTest;
 
 /**
@@ -39,6 +44,28 @@ import org.modeshape.modeler.integration.BaseIntegrationTest;
  */
 @SuppressWarnings( "javadoc" )
 public class ITModelTypeManager extends BaseIntegrationTest {
+    
+    @Test( expected = ModelerException.class )
+    public void shouldFailToProcessDependenciesWhenNotAModelNode() throws Exception {
+        final ModelTypeManagerImpl modelTypeMgr = modelTypeManager;
+        modelTypeManager.manager.run( new Task< Void >() {
+            
+            @Override
+            public Void run( final Session session ) throws Exception {
+                final Node rootNode = session.getRootNode();
+                modelTypeMgr.dependencyProcessor( rootNode );
+                return null;
+            }
+        } );
+    }
+    
+    @Test
+    public void shouldAllowRequestWhenModelTypeDoesNotHaveDependencyProcessor() throws Exception {
+        final Node rootNode = session().getRootNode();
+        final Node modelNode = rootNode.addNode( "elvis" );
+        modelNode.addMixin( Manager.MODEL_NODE_MIXIN );
+        assertThat( modelTypeManager.dependencyProcessor( modelNode ), nullValue() );
+    }
     
     @Test
     public void shouldGetApplicablemodelTypeManager() throws Exception {

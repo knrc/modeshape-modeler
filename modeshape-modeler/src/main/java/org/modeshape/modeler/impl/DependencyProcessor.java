@@ -21,20 +21,20 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-<nt='http://www.jcp.org/jcr/nt/1.0'>
-<mm='http://modeshape.org/modeshape-modeler/1.0'>
+package org.modeshape.modeler.impl;
 
-[mm:unstructured] mixin orderable
-  - * (undefined) multiple
-  - * (undefined)
-  + * (nt:base) = nt:unstructured sns version
+import javax.jcr.Node;
 
-[mm:dependency] > nt:unstructured
-  - mm:input (string)
-  - mm:derivedPath (string) mandatory
-  
-[mm:dependencies]
-  + mm:dependency (mm:dependency)
-
-[mm:model] mixin
-  + mm:dependencies (mm:dependencies)
+/**
+ * Processes dependencies for a specific model type.
+ */
+public interface DependencyProcessor {
+    
+    /**
+     * @param modelNode
+     *        the model node whose dependencies are being processed (cannot be <code>null</code>)
+     * @return the path to the dependencies node or <code>null</code> if no dependencies found
+     */
+    String process( Node modelNode );
+    
+}
