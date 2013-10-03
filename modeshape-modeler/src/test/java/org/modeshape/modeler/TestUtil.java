@@ -23,7 +23,7 @@
  */
 package org.modeshape.modeler;
 
-import org.modeshape.modeler.impl.Manager;
+import org.modeshape.modeler.internal.Manager;
 
 @SuppressWarnings( "javadoc" )
 public class TestUtil {

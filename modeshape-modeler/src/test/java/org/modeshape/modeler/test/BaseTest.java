@@ -40,8 +40,8 @@ import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.modeshape.modeler.Modeler;
 import org.modeshape.modeler.TestUtil;
-import org.modeshape.modeler.impl.Manager;
-import org.modeshape.modeler.impl.ModelTypeManagerImpl;
+import org.modeshape.modeler.internal.Manager;
+import org.modeshape.modeler.internal.ModelTypeManagerImpl;
 
 /**
  * Superclass for all test classes

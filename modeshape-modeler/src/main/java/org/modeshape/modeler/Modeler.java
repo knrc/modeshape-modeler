@@ -36,10 +36,10 @@ import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.ValueFactory;
 import org.modeshape.jcr.api.sequencer.Sequencer;
-import org.modeshape.modeler.impl.DependencyProcessor;
-import org.modeshape.modeler.impl.Manager;
-import org.modeshape.modeler.impl.ModelTypeImpl;
-import org.modeshape.modeler.impl.Task;
+import org.modeshape.modeler.internal.DependencyProcessor;
+import org.modeshape.modeler.internal.Manager;
+import org.modeshape.modeler.internal.ModelTypeImpl;
+import org.modeshape.modeler.internal.Task;
 import org.polyglotter.common.Logger;
 
 /**
