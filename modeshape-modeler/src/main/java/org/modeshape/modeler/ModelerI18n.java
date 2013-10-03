@@ -34,8 +34,8 @@ public final class ModelerI18n {
     public static I18n fileNotFound = new I18n( "File not found: %s" );
     public static I18n modelerStarted = new I18n( "ModeShape Modeler started" );
     public static I18n modelerStopped = new I18n( "ModeShape Modeler stopped" );
-    public static I18n mustBeHttpUrl = new I18n( "Must be an HTTP URL: %s" );
     public static I18n mustBeModelNode = new I18n( "Node '%s' is not a model node" );
     public static I18n sessionNotSavedWhenCreatingModel = new I18n( "The session was not saved when creating model for '%s'" );
     public static I18n unableToDetermineDefaultModelType = new I18n( "Unable to determine default model type for file %s" );
+    public static I18n unableToFindModelTypeCategory = new I18n( "Unable to find model type category \"%s\" in registered model type repositories" );
 }

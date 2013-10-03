@@ -52,11 +52,11 @@ public abstract class BaseTest {
     
     protected static final String TEST_MODESHAPE_CONFIGURATION_PATH = "testModeShapeConfig.json";
     protected static final String TEST_REPOSITORY_STORE_PARENT_PATH;
-    protected static final URL SEQUENCER_REPOSITORY;
+    protected static final URL MODEL_TYPE_REPOSITORY;
     
     static {
         try {
-            SEQUENCER_REPOSITORY = new URL( "file:./src/test/resources/" );
+            MODEL_TYPE_REPOSITORY = new URL( "file:./src/test/resources/" );
             final Path path = Files.createTempDirectory( null );
             path.toFile().deleteOnExit();
             TEST_REPOSITORY_STORE_PARENT_PATH = path.toString();

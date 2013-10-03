@@ -30,6 +30,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 
 import java.net.URL;
+import java.util.List;
 import java.util.Set;
 
 import javax.jcr.Node;
@@ -41,8 +42,6 @@ import org.junit.Test;
 import org.modeshape.modeler.ModelType;
 import org.modeshape.modeler.Modeler;
 import org.modeshape.modeler.TestUtil;
-import org.modeshape.modeler.internal.ModelTypeManagerImpl;
-import org.modeshape.modeler.internal.SystemTask;
 import org.modeshape.modeler.test.BaseTest;
 
 @SuppressWarnings( "javadoc" )
@@ -69,38 +68,33 @@ public class ModelTypeManagerImplTest extends BaseTest {
     }
     
     @Test( expected = IllegalArgumentException.class )
-    public void shouldFailToGetSequencerGroupsIfUrlIsNull() throws Exception {
-        modelTypeManager.sequencerGroups( null );
+    public void shouldFailToInstallModelTypesIfCategoryIsEmpty() throws Exception {
+        modelTypeManager.install( " " );
     }
     
     @Test( expected = IllegalArgumentException.class )
-    public void shouldFailToInstallSequencersIfGroupIsEmpty() throws Exception {
-        modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, " " );
+    public void shouldFailToInstallModelTypesIfCategoryIsNull() throws Exception {
+        modelTypeManager.install( null );
     }
     
     @Test( expected = IllegalArgumentException.class )
-    public void shouldFailToInstallSequencersIfGroupIsNull() throws Exception {
-        modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, null );
+    public void shouldFailToInstallModelTypesIfCategoryNotFound() throws Exception {
+        modelTypeManager.install( "bogus" );
     }
     
     @Test( expected = IllegalArgumentException.class )
-    public void shouldFailToInstallSequencersIfRepositoryUrlIsNull() throws Exception {
-        modelTypeManager.installSequencers( null, null );
+    public void shouldFailToRegisterModelTypeRepositoryIfUrlIsNull() throws Exception {
+        modelTypeManager.registerModelTypeRepository( null );
     }
     
     @Test( expected = IllegalArgumentException.class )
-    public void shouldFailToRegisterSequencerRepositoryIfUrlIsNull() throws Exception {
-        modelTypeManager.registerSequencerRepository( null );
-    }
-    
-    @Test( expected = IllegalArgumentException.class )
-    public void shouldFailToUnregisterSequencerRepositoryIfUrlIsNull() throws Exception {
-        modelTypeManager.unregisterSequencerRepository( null );
+    public void shouldFailToUnregisterModelTypeRepositoryIfUrlIsNull() throws Exception {
+        modelTypeManager.unregisterModelTypeRepository( null );
     }
     
     @Test
-    public void shouldGetDefaultRegisteredSequencerRepositories() {
-        final Set< URL > repos = modelTypeManager.sequencerRepositories();
+    public void shouldGetDefaultRegisteredModelTypeRepositories() {
+        final List< URL > repos = modelTypeManager.modelTypeRepositories();
         assertThat( repos, notNullValue() );
         assertThat( repos.isEmpty(), is( false ) );
     }
@@ -113,17 +107,17 @@ public class ModelTypeManagerImplTest extends BaseTest {
     }
     
     @Test
-    public void shouldGetExistingRegisteredSequencerRepositoriesIfRegisteringRegisteredUrl() throws Exception {
-        final Set< URL > origRepos = modelTypeManager.sequencerRepositories();
-        final Set< URL > repos = modelTypeManager.registerSequencerRepository( SEQUENCER_REPOSITORY );
+    public void shouldGetExistingRegisteredModelTypeRepositoriesIfRegisteringRegisteredUrl() throws Exception {
+        final List< URL > origRepos = modelTypeManager.modelTypeRepositories();
+        final List< URL > repos = modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         assertThat( repos, notNullValue() );
         assertThat( repos.equals( origRepos ), is( true ) );
     }
     
     @Test
-    public void shouldGetExistingRegisteredSequencerRepositoriesIfUnregisteringUnregisteredUrl() throws Exception {
-        final int size = modelTypeManager.sequencerRepositories().size();
-        final Set< URL > repos = modelTypeManager.unregisterSequencerRepository( new URL( "file:" ) );
+    public void shouldGetExistingRegisteredModelTypeRepositoriesIfUnregisteringUnregisteredUrl() throws Exception {
+        final int size = modelTypeManager.modelTypeRepositories().size();
+        final List< URL > repos = modelTypeManager.unregisterModelTypeRepository( new URL( "file:" ) );
         assertThat( repos, notNullValue() );
         assertThat( repos.size(), is( size ) );
     }
@@ -134,8 +128,9 @@ public class ModelTypeManagerImplTest extends BaseTest {
     }
     
     @Test
-    public void shouldInstallSequencer() throws Exception {
-        final Set< String > potentialSequencerClassNames = modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "java" );
+    public void shouldInstallModelTypes() throws Exception {
+        modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
+        final Set< String > potentialSequencerClassNames = modelTypeManager.install( "java" );
         assertThat( potentialSequencerClassNames.isEmpty(), is( true ) );
         assertThat( modelTypeManager.modelTypes().isEmpty(), is( false ) );
     }
@@ -146,14 +141,14 @@ public class ModelTypeManagerImplTest extends BaseTest {
         int repos;
         try ( Modeler modeler = new Modeler( Modeler.DEFAULT_MODESHAPE_CONFIGURATION_PATH, TEST_REPOSITORY_STORE_PARENT_PATH ) ) {
             final ModelTypeManagerImpl modelTypeManager = ( ModelTypeManagerImpl ) modeler.modelTypeManager();
-            repos = modelTypeManager.sequencerRepositories().size();
-            modelTypeManager.registerSequencerRepository( SEQUENCER_REPOSITORY );
-            modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "java" );
-            modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "xsd" );
+            repos = modelTypeManager.modelTypeRepositories().size();
+            modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
+            modelTypeManager.install( "java" );
+            modelTypeManager.install( "xsd" );
         }
         try ( Modeler modeler = new Modeler( Modeler.DEFAULT_MODESHAPE_CONFIGURATION_PATH, TEST_REPOSITORY_STORE_PARENT_PATH ) ) {
             final ModelTypeManagerImpl modelTypeManager = ( ModelTypeManagerImpl ) modeler.modelTypeManager();
-            assertThat( modelTypeManager.sequencerRepositories().size(), not( repos ) );
+            assertThat( modelTypeManager.modelTypeRepositories().size(), not( repos ) );
             assertThat( modelTypeManager.modelTypes().isEmpty(), is( false ) );
             assertThat( modelTypeManager.libraryClassLoader.getURLs().length > 0, is( true ) );
             assertThat( modelTypeManager.potentialSequencerClassNames.isEmpty(), is( false ) );
@@ -170,7 +165,7 @@ public class ModelTypeManagerImplTest extends BaseTest {
     }
     
     @Test
-    public void shouldNotInstallSequencerIfAlreadyInstalled() throws Exception {
+    public void shouldNotInstallModelTypeCategoryIfAlreadyInstalled() throws Exception {
         manager.run( modelTypeManager, new SystemTask< Void >() {
             
             @Override
@@ -184,26 +179,27 @@ public class ModelTypeManagerImplTest extends BaseTest {
                 return null;
             }
         } );
-        modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "test" );
+        modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
+        modelTypeManager.install( "test" );
         assertThat( modelTypeManager.modelTypes().isEmpty(), is( true ) );
     }
     
     @Test
-    public void shouldRegisterSequencerRepository() throws Exception {
-        final int size = modelTypeManager.sequencerRepositories().size();
+    public void shouldRegisterModelTypeRepository() throws Exception {
+        final int size = modelTypeManager.modelTypeRepositories().size();
         final URL repo = new URL( "file:" );
-        final Set< URL > repos = modelTypeManager.registerSequencerRepository( repo );
+        final List< URL > repos = modelTypeManager.registerModelTypeRepository( repo );
         assertThat( repos, notNullValue() );
         assertThat( repos.size(), is( size + 1 ) );
         assertThat( repos.contains( repo ), is( true ) );
     }
     
     @Test
-    public void shouldUnregisterSequencerRepository() throws Exception {
-        final int size = modelTypeManager.sequencerRepositories().size();
+    public void shouldUnregisterModelTypeRepository() throws Exception {
+        final int size = modelTypeManager.modelTypeRepositories().size();
         final URL repo = new URL( "file:" );
-        modelTypeManager.registerSequencerRepository( repo );
-        final Set< URL > repos = modelTypeManager.unregisterSequencerRepository( repo );
+        modelTypeManager.registerModelTypeRepository( repo );
+        final List< URL > repos = modelTypeManager.unregisterModelTypeRepository( repo );
         assertThat( repos, notNullValue() );
         assertThat( repos.size(), is( size ) );
     }

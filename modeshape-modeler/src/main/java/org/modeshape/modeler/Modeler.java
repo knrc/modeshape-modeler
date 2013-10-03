@@ -157,7 +157,7 @@ public final class Modeler implements AutoCloseable {
                     return modelNode.getPath();
                 }
                 
-                throw new ModelerException( ModelerI18n.sessionNotSavedWhenCreatingModel.text( artifactPath ) );
+                throw new ModelerException( ModelerI18n.sessionNotSavedWhenCreatingModel, artifactPath );
             }
         } );
     }
