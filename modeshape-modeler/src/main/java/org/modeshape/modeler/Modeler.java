@@ -93,13 +93,13 @@ public final class Modeler implements AutoCloseable {
     }
     
     /**
-     * @param contentPath
+     * @param artifactPath
      *        the repository path to an artifact
      * @throws ModelerException
      *         if any problem occurs
      */
-    public void createDefaultModel( final String contentPath ) throws ModelerException {
-        createModel( contentPath, null );
+    public void createDefaultModel( final String artifactPath ) throws ModelerException {
+        createModel( artifactPath, null );
     }
     
     /**
@@ -118,12 +118,12 @@ public final class Modeler implements AutoCloseable {
             
             @Override
             public String run( final Session session ) throws Exception {
-                final Node contentNode = manager.fileNode( session, artifactPath );
+                final Node artifactNode = manager.artifactNode( session, artifactPath );
                 ModelType type = modelType;
                 if ( modelType == null ) {
                     // If no model type supplied, use default model type if one exists
-                    type = manager.modelTypeManager.defaultModelType( contentNode,
-                                                                      manager.modelTypeManager.modelTypes( contentNode ) );
+                    type = manager.modelTypeManager.defaultModelType( artifactNode,
+                                                                      manager.modelTypeManager.modelTypes( artifactNode ) );
                     if ( type == null )
                         throw new IllegalArgumentException( ModelerI18n.unableToDetermineDefaultModelType.text( artifactPath ) );
                 }
@@ -132,11 +132,11 @@ public final class Modeler implements AutoCloseable {
                 final Calendar cal = Calendar.getInstance();
                 
                 final ModelTypeImpl modelType = ( ModelTypeImpl ) type;
-                final Node modelNode = contentNode.addNode( type.name() );
+                final Node modelNode = artifactNode.addNode( type.name() );
                 modelNode.addMixin( Manager.MODEL_NODE_MIXIN );
                 
-                final boolean save = modelType.sequencer().execute( contentNode.getNode( JcrLexicon.CONTENT.getString() )
-                                                                               .getProperty( JcrLexicon.DATA.getString() ),
+                final boolean save = modelType.sequencer().execute( artifactNode.getNode( JcrLexicon.CONTENT.getString() )
+                                                                                .getProperty( JcrLexicon.DATA.getString() ),
                                                                     modelNode,
                                                                     new Sequencer.Context() {
                                                                         
@@ -163,39 +163,19 @@ public final class Modeler implements AutoCloseable {
     }
     
     /**
-     * @param file
-     *        the file to be imported. Must not be <code>null</code>.
-     * @param workspaceParentPath
-     *        the path of the parent path where the file should be imported
-     * @return the repository path the to imported content
-     * @throws ModelerException
-     *         if any problem occurs
-     */
-    public String importContent( final File file,
-                                 final String workspaceParentPath ) throws ModelerException {
-        CheckArg.isNotNull( file, "file" );
-        if ( !file.exists() ) throw new IllegalArgumentException( ModelerI18n.fileNotFound.text( file ) );
-        try {
-            return importContent( file.getName(), file.toURI().toURL().openStream(), workspaceParentPath );
-        } catch ( final IOException e ) {
-            throw new ModelerException( e );
-        }
-    }
-    
-    /**
      * @param name
      *        the name of the artifact as it should be stored in the repository. Must not be empty.
      * @param stream
      *        the artifact's content to be imported. Must not be <code>null</code>.
      * @param workspaceParentPath
-     *        the path of the parent path where the content should be imported
+     *        the path of the parent path where the artifact should be imported
      * @return the repository path the to imported artifact
      * @throws ModelerException
      *         if any problem occurs
      */
-    public String importContent( final String name,
-                                 final InputStream stream,
-                                 final String workspaceParentPath ) throws ModelerException {
+    public String importArtifact( final String name,
+                                  final InputStream stream,
+                                  final String workspaceParentPath ) throws ModelerException {
         CheckArg.isNotEmpty( name, "name" );
         CheckArg.isNotNull( stream, "stream" );
         return manager.run( new Task< String >() {
@@ -212,6 +192,26 @@ public final class Modeler implements AutoCloseable {
                 return fileNode.getPath();
             }
         } );
+    }
+    
+    /**
+     * @param file
+     *        the file to be imported. Must not be <code>null</code>.
+     * @param workspaceParentPath
+     *        the path of the parent path where the file should be imported
+     * @return the repository path the to imported artifact
+     * @throws ModelerException
+     *         if any problem occurs
+     */
+    public String importFile( final File file,
+                              final String workspaceParentPath ) throws ModelerException {
+        CheckArg.isNotNull( file, "file" );
+        if ( !file.exists() ) throw new IllegalArgumentException( ModelerI18n.fileNotFound.text( file ) );
+        try {
+            return importArtifact( file.getName(), file.toURI().toURL().openStream(), workspaceParentPath );
+        } catch ( final IOException e ) {
+            throw new ModelerException( e );
+        }
     }
     
     /**

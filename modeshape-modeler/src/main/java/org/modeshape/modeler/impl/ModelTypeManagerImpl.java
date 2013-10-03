@@ -23,7 +23,6 @@
  */
 package org.modeshape.modeler.impl;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Modifier;
@@ -39,17 +38,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 
-import javax.jcr.Binary;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
-import javax.jcr.PathNotFoundException;
 import javax.jcr.Repository;
-import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
-import javax.jcr.ValueFormatException;
 import javax.jcr.nodetype.NodeType;
 
 import org.jsoup.Jsoup;
@@ -158,19 +152,6 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
         } );
     }
     
-    Binary content( final Node fileNode ) throws ValueFormatException, PathNotFoundException, RepositoryException {
-        return fileNode.getNode( JcrLexicon.CONTENT.getString() ).getProperty( JcrLexicon.DATA.getString() ).getBinary();
-    }
-    
-    byte[] content( final ZipInputStream zip ) throws IOException {
-        try ( final ByteArrayOutputStream stream = new ByteArrayOutputStream() ) {
-            final byte[] buf = new byte[ 1024 ];
-            for ( int bytesRead; ( bytesRead = zip.read( buf, 0, buf.length ) ) > 0; )
-                stream.write( buf, 0, bytesRead );
-            return stream.toByteArray();
-        }
-    }
-    
     /**
      * @param fileNode
      *        the file node
@@ -200,7 +181,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
             
             @Override
             public ModelType run( final Session session ) throws Exception {
-                final Node node = manager.fileNode( session, filePath );
+                final Node node = manager.artifactNode( session, filePath );
                 final ModelType type = defaultModelType( node, modelTypes( node ) );
                 return type == null ? null : type;
             }
@@ -409,7 +390,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
             
             @Override
             public final Set< ModelType > run( final Session session ) throws Exception {
-                return modelTypes( manager.fileNode( session, filePath ) );
+                return modelTypes( manager.artifactNode( session, filePath ) );
             }
         } );
     }

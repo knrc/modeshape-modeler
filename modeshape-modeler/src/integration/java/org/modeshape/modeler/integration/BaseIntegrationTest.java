@@ -32,8 +32,8 @@ import org.modeshape.modeler.test.BaseTest;
 @SuppressWarnings( "javadoc" )
 public abstract class BaseIntegrationTest extends BaseTest {
     
-    protected static final String XML_CONTENT = "<?xml version='1.0' encoding='UTF-8'?>";
-    protected static final String XSD_CONTENT = XML_CONTENT + "<schema></schema>";
+    protected static final String XML_ARTIFACT = "<?xml version='1.0' encoding='UTF-8'?>";
+    protected static final String XSD_ARTIFACT = XML_ARTIFACT + "<schema></schema>";
     
     protected static final URL HTTP_SEQUENCER_REPOSITORY;
     

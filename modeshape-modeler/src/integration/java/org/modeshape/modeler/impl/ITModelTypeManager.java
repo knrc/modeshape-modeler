@@ -77,7 +77,7 @@ public class ITModelTypeManager extends BaseIntegrationTest {
     public void shouldGetApplicablemodelTypeManager() throws Exception {
         modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "sramp" );
         modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "xsd" );
-        final Set< ModelType > types = modelTypeManager.modelTypes( importContent( XSD_CONTENT ) );
+        final Set< ModelType > types = modelTypeManager.modelTypes( importArtifact( XSD_ARTIFACT ) );
         assertThat( types, notNullValue() );
         assertThat( types.isEmpty(), is( false ) );
     }

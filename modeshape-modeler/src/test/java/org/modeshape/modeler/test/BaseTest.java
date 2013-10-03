@@ -105,11 +105,11 @@ public abstract class BaseTest {
             } );
     }
     
-    protected String importContent( final String content ) throws Exception {
-        return modeler.importContent( "stuff", new ByteArrayInputStream( content.getBytes() ), null );
+    protected String importArtifact( final String artifactPath ) throws Exception {
+        return modeler.importArtifact( "stuff", new ByteArrayInputStream( artifactPath.getBytes() ), null );
     }
     
-    protected InputStream stream( final String content ) {
-        return new ByteArrayInputStream( content.getBytes() );
+    protected InputStream stream( final String artifactPath ) {
+        return new ByteArrayInputStream( artifactPath.getBytes() );
     }
 }

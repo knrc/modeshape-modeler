@@ -105,7 +105,7 @@ public class ModelTypeManagerImplTest extends BaseTest {
     
     @Test
     public void shouldGetEmptyApplicableModelTypesIfFileHasUknownMimeType() throws Exception {
-        final Set< ModelType > types = modelTypeManager.modelTypes( importContent( "stuff" ) );
+        final Set< ModelType > types = modelTypeManager.modelTypes( importArtifact( "stuff" ) );
         assertThat( types, notNullValue() );
         assertThat( types.isEmpty(), is( true ) );
     }
@@ -128,7 +128,7 @@ public class ModelTypeManagerImplTest extends BaseTest {
     
     @Test
     public void shouldGetNullDefaultModelTypeIfFileHasUknownMimeType() throws Exception {
-        assertThat( modelTypeManager.defaultModelType( importContent( "stuff" ) ), nullValue() );
+        assertThat( modelTypeManager.defaultModelType( importArtifact( "stuff" ) ), nullValue() );
     }
     
     @Test

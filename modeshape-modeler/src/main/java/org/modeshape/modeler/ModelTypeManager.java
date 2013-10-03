@@ -1,9 +1,9 @@
 /*
  * Polyglotter (http://polyglotter.org)
- * See the COPYRIGHT.txt content distributed with this work for information
+ * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt content in the distribution for a full listing of 
+ * See the AUTHORS.txt file in the distribution for a full listing of 
  * individual contributors.
  *
  * Polyglotter is free software. Unless otherwise indicated, all code in Polyglotter
@@ -46,13 +46,13 @@ public interface ModelTypeManager {
     String MAVEN_SEQUENCER_REPOSITORY = "http://repo1.maven.org/maven2" + ModelTypeManagerImpl.MODESHAPE_GROUP;
     
     /**
-     * @param contentPath
-     *        the repository path to an artifact's content
-     * @return the default model type for the content at the supplied path
+     * @param artifactPath
+     *        the repository path to an artifact
+     * @return the default model type for the artifact at the supplied path
      * @throws ModelerException
      *         if any problem occurs
      */
-    ModelType defaultModelType( final String contentPath ) throws ModelerException;
+    ModelType defaultModelType( final String artifactPath ) throws ModelerException;
     
     /**
      * @param repositoryUrl
@@ -74,13 +74,13 @@ public interface ModelTypeManager {
     Set< ModelType > modelTypes();
     
     /**
-     * @param contentPath
-     *        the repository path to an artifact's content
-     * @return the model types applicable to the content at the supplied path
+     * @param artifactPath
+     *        the repository path to an artifact
+     * @return the model types applicable to the artifact at the supplied path
      * @throws ModelerException
      *         if any problem occurs
      */
-    Set< ModelType > modelTypes( final String contentPath ) throws ModelerException;
+    Set< ModelType > modelTypes( final String artifactPath ) throws ModelerException;
     
     /**
      * @param repositoryUrl
