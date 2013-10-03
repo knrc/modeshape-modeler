@@ -79,14 +79,14 @@ public class ITModelTypeManager extends BaseIntegrationTest {
     public void shouldGetApplicablemodelTypeManager() throws Exception {
         modelTypeManager.install( "sramp" );
         modelTypeManager.install( "xsd" );
-        final Set< ModelType > types = modelTypeManager.modelTypes( importArtifact( XSD_ARTIFACT ) );
+        final Set< ModelType > types = modelTypeManager.modelTypesForArtifact( importArtifact( XSD_ARTIFACT ) );
         assertThat( types, notNullValue() );
         assertThat( types.isEmpty(), is( false ) );
     }
     
     @Test
     public void shouldGetModelTypeCategories() throws Exception {
-        assertThat( modelTypeManager.modelTypeCategories().isEmpty(), is( false ) );
+        assertThat( modelTypeManager.installableModelTypeCategories().isEmpty(), is( false ) );
     }
     
     @Test

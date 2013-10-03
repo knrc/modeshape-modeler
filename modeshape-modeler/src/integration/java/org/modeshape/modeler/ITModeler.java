@@ -49,7 +49,7 @@ public class ITModeler extends BaseIntegrationTest {
         modelTypeManager.install( "xsd" );
         final String path = importArtifact( XSD_ARTIFACT );
         ModelType modelType = null;
-        for ( final ModelType type : modelTypeManager.modelTypes( path ) ) {
+        for ( final ModelType type : modelTypeManager.modelTypesForArtifact( path ) ) {
             if ( type.name().equals( XSD_MODEL_TYPE_NAME ) ) {
                 modelType = type;
                 break;

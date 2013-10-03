@@ -49,12 +49,12 @@ public class ModelTypeManagerImplTest extends BaseTest {
     
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetApplicableModelTypesIfPathIsEmpty() throws Exception {
-        modelTypeManager.modelTypes( " " );
+        modelTypeManager.modelTypesForArtifact( " " );
     }
     
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetApplicableModelTypesIfPathIsNull() throws Exception {
-        modelTypeManager.modelTypes( ( String ) null );
+        modelTypeManager.modelTypesForArtifact( ( String ) null );
     }
     
     @Test( expected = IllegalArgumentException.class )
@@ -65,6 +65,16 @@ public class ModelTypeManagerImplTest extends BaseTest {
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetDefaultModelTypeIfPathIsNull() throws Exception {
         modelTypeManager.defaultModelType( null );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToGetModelTypesForCategoryIfCategoryEmpty() {
+        modelTypeManager.modelTypesForCategory( " " );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToGetModelTypesForCategoryIfCategoryNull() {
+        modelTypeManager.modelTypesForCategory( null );
     }
     
     @Test( expected = IllegalArgumentException.class )
@@ -101,7 +111,7 @@ public class ModelTypeManagerImplTest extends BaseTest {
     
     @Test
     public void shouldGetEmptyApplicableModelTypesIfFileHasUknownMimeType() throws Exception {
-        final Set< ModelType > types = modelTypeManager.modelTypes( importArtifact( "stuff" ) );
+        final Set< ModelType > types = modelTypeManager.modelTypesForArtifact( importArtifact( "stuff" ) );
         assertThat( types, notNullValue() );
         assertThat( types.isEmpty(), is( true ) );
     }
@@ -123,6 +133,14 @@ public class ModelTypeManagerImplTest extends BaseTest {
     }
     
     @Test
+    public void shouldGetModelTypeCategories() throws Exception {
+        modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
+        modelTypeManager.install( "java" );
+        assertThat( modelTypeManager.modelTypeCategories().size(), is( 1 ) );
+        assertThat( modelTypeManager.modelTypeCategories().contains( "java" ), is( true ) );
+    }
+    
+    @Test
     public void shouldGetNullDefaultModelTypeIfFileHasUknownMimeType() throws Exception {
         assertThat( modelTypeManager.defaultModelType( importArtifact( "stuff" ) ), nullValue() );
     }
@@ -133,6 +151,9 @@ public class ModelTypeManagerImplTest extends BaseTest {
         final Set< String > potentialSequencerClassNames = modelTypeManager.install( "java" );
         assertThat( potentialSequencerClassNames.isEmpty(), is( true ) );
         assertThat( modelTypeManager.modelTypes().isEmpty(), is( false ) );
+        final ModelTypeImpl type = ( ModelTypeImpl ) modelTypeManager.modelTypes().iterator().next();
+        assertThat( type.category(), is( "java" ) );
+        assertThat( type.sequencerClass, notNullValue() );
     }
     
     @Test
@@ -182,6 +203,18 @@ public class ModelTypeManagerImplTest extends BaseTest {
         modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         modelTypeManager.install( "test" );
         assertThat( modelTypeManager.modelTypes().isEmpty(), is( true ) );
+    }
+    
+    @Test
+    public void shouldNotReturnNullModelTypeCategories() {
+        assertThat( modelTypeManager.modelTypeCategories(), notNullValue() );
+        assertThat( modelTypeManager.modelTypeCategories().isEmpty(), is( true ) );
+    }
+    
+    @Test
+    public void shouldNotReturnNullModelTypesForCategory() {
+        assertThat( modelTypeManager.modelTypesForCategory( "bogus" ), notNullValue() );
+        assertThat( modelTypeManager.modelTypesForCategory( "bogus" ).isEmpty(), is( true ) );
     }
     
     @Test

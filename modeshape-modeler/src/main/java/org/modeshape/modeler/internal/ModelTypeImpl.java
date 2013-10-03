@@ -43,15 +43,28 @@ public final class ModelTypeImpl implements ModelType {
     
     private final Manager manager;
     final Class< ? > sequencerClass;
+    private final String category;
     private final String name;
     private final Set< String > sourceFileExtensions = new HashSet<>();
     
     ModelTypeImpl( final Manager manager,
+                   final String category,
                    final String name,
                    final Class< ? > sequencerClass ) {
         this.manager = manager;
+        this.category = category;
         this.name = name;
         this.sequencerClass = sequencerClass;
+    }
+    
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.modeler.ModelType#category()
+     */
+    @Override
+    public String category() {
+        return category;
     }
     
     /**
@@ -104,6 +117,6 @@ public final class ModelTypeImpl implements ModelType {
      */
     @Override
     public String toString() {
-        return name;
+        return name + " [" + category + ']';
     }
 }

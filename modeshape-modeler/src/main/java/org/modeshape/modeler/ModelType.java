@@ -31,6 +31,11 @@ import java.util.Set;
 public interface ModelType {
     
     /**
+     * @return the category of this model type
+     */
+    String category();
+    
+    /**
      * @return the name of this model type
      */
     String name();
