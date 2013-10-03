@@ -41,17 +41,17 @@ import org.modeshape.modeler.ModelerException;
  */
 public final class ModelTypeImpl implements ModelType {
     
-    private final Manager mgr;
+    private final Manager manager;
     final Class< ? > sequencerClass;
-    private String name;
+    private final String name;
     private final Set< String > sourceFileExtensions = new HashSet<>();
     
     ModelTypeImpl( final Manager manager,
+                   final String name,
                    final Class< ? > sequencerClass ) {
-        mgr = manager;
+        this.manager = manager;
+        this.name = name;
         this.sequencerClass = sequencerClass;
-        name = sequencerClass.getName();
-        name = name.endsWith( "Sequencer" ) ? name.substring( 0, name.length() - "Sequencer".length() ) : name;
     }
     
     /**
@@ -70,7 +70,7 @@ public final class ModelTypeImpl implements ModelType {
      *         if any problem occurs
      */
     public Sequencer sequencer() throws ModelerException {
-        return mgr.run( new Task< Sequencer >() {
+        return manager.run( new Task< Sequencer >() {
             
             @Override
             public Sequencer run( final Session session ) throws Exception {

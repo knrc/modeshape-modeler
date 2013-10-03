@@ -23,13 +23,13 @@
  */
 package org.modeshape.modeler;
 
-import javax.jcr.Session;
+import org.modeshape.modeler.impl.Manager;
 
 @SuppressWarnings( "javadoc" )
 public class TestUtil {
     
-    public static Session session( final Modeler modeler ) throws ModelerException {
-        return modeler.manager.session();
+    public static Manager manager( final Modeler modeler ) {
+        return modeler.manager;
     }
     
     private TestUtil() {}

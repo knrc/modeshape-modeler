@@ -23,13 +23,25 @@
  */
 package org.modeshape.modeler.integration;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+
 import org.modeshape.modeler.ModelTypeManager;
 import org.modeshape.modeler.test.BaseTest;
 
 @SuppressWarnings( "javadoc" )
 public abstract class BaseIntegrationTest extends BaseTest {
     
-    protected static final String SEQUENCER_REPOSITORY = ModelTypeManager.JBOSS_SEQUENCER_REPOSITORY;
     protected static final String XML_CONTENT = "<?xml version='1.0' encoding='UTF-8'?>";
     protected static final String XSD_CONTENT = XML_CONTENT + "<schema></schema>";
+    
+    protected static final URL HTTP_SEQUENCER_REPOSITORY;
+    
+    static {
+        try {
+            HTTP_SEQUENCER_REPOSITORY = new URL( ModelTypeManager.JBOSS_SEQUENCER_REPOSITORY );
+        } catch ( final MalformedURLException e ) {
+            throw new RuntimeException( e );
+        }
+    }
 }

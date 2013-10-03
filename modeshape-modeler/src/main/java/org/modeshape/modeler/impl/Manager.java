@@ -31,14 +31,15 @@ import java.util.zip.ZipInputStream;
 import javax.jcr.Binary;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
-import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.ValueFormatException;
 
 import org.modeshape.common.collection.Problem;
 import org.modeshape.common.collection.Problems;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrLexicon;
+import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.NoSuchRepositoryException;
 import org.modeshape.jcr.RepositoryConfiguration;
@@ -55,11 +56,6 @@ public final class Manager {
     /**
      * 
      */
-    public static final String DEFAULT_MODESHAPE_CONFIGURATION_PATH = "jcr/modeShapeConfig.json";
-    
-    /**
-     * 
-     */
     public static final String NS = "mm:";
     
     /**
@@ -68,29 +64,77 @@ public final class Manager {
     public static final String UNSTRUCTURED_MIXIN = NS + "unstructured";
     
     /**
+     * 
+     */
+    public static final String REPOSITORY_STORE_PARENT_PATH_PROPERTY = "org.modeshape.modeler.repositoryStoreParentPath";
+    
+    private final ModeShapeEngine modeShape;
+    final JcrRepository repository;
+    
+    /**
      * The mixin type of a model node.
      */
     public static final String MODEL_NODE_MIXIN = NS + "model";
     
-    @SuppressWarnings( "javadoc" )
+    /**
+     * 
+     */
     public final String modeShapeConfigurationPath;
-    private ModeShapeEngine modeShape;
-    private Repository repository;
-    final ModelTypeManagerImpl modelTypeMgr = new ModelTypeManagerImpl( this );
     
     /**
-     * Uses a default ModeShape configuration.
+     * 
      */
-    public Manager() {
-        modeShapeConfigurationPath = DEFAULT_MODESHAPE_CONFIGURATION_PATH;
-    }
+    public final ModelTypeManagerImpl modelTypeManager;
     
     /**
      * @param modeShapeConfigurationPath
      *        the path to a ModeShape configuration file
+     * @param repositoryStoreParentPath
+     *        the path to the folder that should contain the ModeShape repository store
+     * @throws ModelerException
+     *         if any error occurs
      */
-    public Manager( final String modeShapeConfigurationPath ) {
+    public Manager( final String modeShapeConfigurationPath,
+                    final String repositoryStoreParentPath ) throws ModelerException {
+        CheckArg.isNotEmpty( modeShapeConfigurationPath, "modeShapeConfigurationPath" );
+        CheckArg.isNotEmpty( repositoryStoreParentPath, "repositoryStoreParentPath" );
+        System.setProperty( REPOSITORY_STORE_PARENT_PATH_PROPERTY, repositoryStoreParentPath );
         this.modeShapeConfigurationPath = modeShapeConfigurationPath;
+        try {
+            modeShape = new ModeShapeEngine();
+            modeShape.start();
+            final RepositoryConfiguration config = RepositoryConfiguration.read( modeShapeConfigurationPath );
+            final Problems problems = config.validate();
+            if ( problems.hasProblems() ) {
+                for ( final Problem problem : problems )
+                    Logger.getLogger( getClass() ).error( problem.getThrowable(), CommonI18n.text, problem.getMessage().text() );
+                throw problems.iterator().next().getThrowable();
+            }
+            JcrRepository repository;
+            try {
+                repository = modeShape.getRepository( config.getName() );
+            } catch ( final NoSuchRepositoryException err ) {
+                repository = modeShape.deploy( config );
+            }
+            this.repository = repository;
+            Logger.getLogger( getClass() ).info( ModelerI18n.modelerStarted );
+        } catch ( final Throwable e ) {
+            throw new ModelerException( e );
+        }
+        modelTypeManager = new ModelTypeManagerImpl( this );
+    }
+    
+    /**
+     * @throws ModelerException
+     *         if any problem occurs
+     */
+    public void close() throws ModelerException {
+        try {
+            modeShape.shutdown().get();
+        } catch ( InterruptedException | ExecutionException e ) {
+            throw new ModelerException( e );
+        }
+        Logger.getLogger( getClass() ).info( ModelerI18n.modelerStopped );
     }
     
     Binary content( final Node fileNode ) throws ValueFormatException, PathNotFoundException, RepositoryException {
@@ -122,35 +166,39 @@ public final class Manager {
     }
     
     /**
-     * @return the model type manager
+     * @param systemObject
+     *        the system class for which the supplied system task will be run.
+     * @param task
+     *        a system task
+     * @return the return value of the supplied system task
+     * @throws ModelerException
+     *         if any problem occurs
      */
-    public ModelTypeManagerImpl modelTypeManager() {
-        return modelTypeMgr;
-    }
-    
-    Repository repository() throws ModelerException {
-        if ( modeShape == null ) {
-            try {
-                modeShape = new ModeShapeEngine();
-                modeShape.start();
-                final RepositoryConfiguration config = RepositoryConfiguration.read( modeShapeConfigurationPath );
-                final Problems problems = config.validate();
-                if ( problems.hasProblems() ) {
-                    for ( final Problem problem : problems )
-                        Logger.getLogger( getClass() ).error( problem.getThrowable(), CommonI18n.text, problem.getMessage().text() );
-                    throw problems.iterator().next().getThrowable();
-                }
-                try {
-                    repository = modeShape.getRepository( config.getName() );
-                } catch ( final NoSuchRepositoryException err ) {
-                    repository = modeShape.deploy( config );
-                }
-                Logger.getLogger( getClass() ).info( ModelerI18n.modelerStarted );
-            } catch ( final Throwable e ) {
-                throw new ModelerException( e );
+    public < T > T run( final Object systemObject,
+                        final SystemTask< T > task
+                    ) throws ModelerException {
+        try {
+            final Session session = repository.login( "modeler" );
+            final String path = '/' + systemObject.getClass().getSimpleName();
+            final Node node;
+            if ( session.nodeExists( path ) )
+                node = session.getNode( path );
+            else {
+                node = session.getRootNode().addNode( path );
+                session.save();
             }
+            try {
+                return task.run( session, node );
+            } catch ( final RuntimeException e ) {
+                throw e;
+            } catch ( final Exception e ) {
+                throw new ModelerException( e );
+            } finally {
+                session.logout();
+            }
+        } catch ( final RepositoryException e ) {
+            throw new ModelerException( e );
         }
-        return repository;
     }
     
     /**
@@ -161,46 +209,19 @@ public final class Manager {
      *         if any problem occurs
      */
     public < T > T run( final Task< T > task ) throws ModelerException {
-        final Session session = session();
         try {
-            return task.run( session );
-        } catch ( final RuntimeException e ) {
-            throw e;
-        } catch ( final Exception e ) {
-            throw new ModelerException( e );
-        } finally {
-            session.logout();
-        }
-    }
-    
-    /**
-     * @return a new session
-     * @throws ModelerException
-     *         if any problem occurs
-     */
-    public Session session() throws ModelerException {
-        try {
-            return repository().login( "default" );
-        } catch ( final Throwable e ) {
-            throw new ModelerException( e );
-        }
-    }
-    
-    /**
-     * @throws ModelerException
-     *         if any problem occurs
-     */
-    public void stop() throws ModelerException {
-        if ( modeShape == null )
-            Logger.getLogger( getClass() ).debug( "Attempt to stop ModeShape Modeler when it is already stopped" );
-        else {
+            final Session session = repository.login( "default" );
             try {
-                modeShape.shutdown().get();
-            } catch ( InterruptedException | ExecutionException e ) {
+                return task.run( session );
+            } catch ( final RuntimeException e ) {
+                throw e;
+            } catch ( final Exception e ) {
                 throw new ModelerException( e );
+            } finally {
+                session.logout();
             }
-            modeShape = null;
-            Logger.getLogger( getClass() ).info( ModelerI18n.modelerStopped );
+        } catch ( final RepositoryException e ) {
+            throw new ModelerException( e );
         }
     }
 }

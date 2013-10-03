@@ -23,6 +23,7 @@
  */
 package org.modeshape.modeler;
 
+import java.net.URL;
 import java.util.Set;
 
 import org.modeshape.jcr.api.sequencer.Sequencer;
@@ -58,13 +59,13 @@ public interface ModelTypeManager {
      *        a {@link #sequencerRepositories() URL} to an on-line <a href="http://maven.apache.org">Maven</a> {@link Sequencer}
      *        repository
      * @param group
-     *        the name of an available {@link #sequencerGroups(String) group} of sequencers from an on-line <a
+     *        the name of an available {@link #sequencerGroups(URL) group} of sequencers from an on-line <a
      *        href="http://maven.apache.org">Maven</a> {@link Sequencer} repository
      * @return the set of names of potential sequencer classes that could not be instantiated, usually due to missing dependencies.
      * @throws ModelerException
      *         if any problem occurs
      */
-    Set< String > installSequencers( final String repositoryUrl,
+    Set< String > installSequencers( final URL repositoryUrl,
                                      final String group ) throws ModelerException;
     
     /**
@@ -84,8 +85,12 @@ public interface ModelTypeManager {
     /**
      * @param repositoryUrl
      *        a URL to an on-line <a href="http://maven.apache.org">Maven</a> {@link Sequencer} repository
+     * @return the {@link #registerSequencerRepository(URL) registered} <a href="http://maven.apache.org">Maven</a>
+     *         {@link Sequencer} repository URLs
+     * @throws ModelerException
+     *         if any error occurs
      */
-    void registerSequencerRepository( final String repositoryUrl );
+    Set< URL > registerSequencerRepository( final URL repositoryUrl ) throws ModelerException;
     
     /**
      * @param repositoryUrl
@@ -95,18 +100,22 @@ public interface ModelTypeManager {
      * @throws ModelerException
      *         if any problem occurs
      */
-    Set< String > sequencerGroups( final String repositoryUrl ) throws ModelerException;
+    Set< String > sequencerGroups( final URL repositoryUrl ) throws ModelerException;
     
     /**
-     * @return the {@link #registerSequencerRepository(String) registered} <a href="http://maven.apache.org">Maven</a>
+     * @return the {@link #registerSequencerRepository(URL) registered} <a href="http://maven.apache.org">Maven</a>
      *         {@link Sequencer} repository URLs
      */
-    Set< String > sequencerRepositories();
+    Set< URL > sequencerRepositories();
     
     /**
      * @param repositoryUrl
-     *        a URL to a {@link #registerSequencerRepository(String) registered} on-line <a href="http://maven.apache.org">Maven</a>
+     *        a URL to a {@link #registerSequencerRepository(URL) registered} on-line <a href="http://maven.apache.org">Maven</a>
      *        {@link Sequencer} repository
+     * @return the {@link #registerSequencerRepository(URL) registered} <a href="http://maven.apache.org">Maven</a>
+     *         {@link Sequencer} repository URLs
+     * @throws ModelerException
+     *         if any error occurs
      */
-    void unregisterSequencerRepository( final String repositoryUrl );
+    Set< URL > unregisterSequencerRepository( final URL repositoryUrl ) throws ModelerException;
 }

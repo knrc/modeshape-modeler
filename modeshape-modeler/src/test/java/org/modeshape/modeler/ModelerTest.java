@@ -24,7 +24,6 @@
 package org.modeshape.modeler;
 
 import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 
@@ -35,7 +34,7 @@ import javax.jcr.Session;
 
 import org.junit.Test;
 import org.modeshape.jcr.JcrLexicon;
-import org.modeshape.modeler.impl.Manager;
+import org.modeshape.modeler.impl.Task;
 import org.modeshape.modeler.test.BaseTest;
 
 /**
@@ -44,11 +43,9 @@ import org.modeshape.modeler.test.BaseTest;
 @SuppressWarnings( "javadoc" )
 public final class ModelerTest extends BaseTest {
     
-    private static final String TEST_MODESHAPE_CONFIGURATION_PATH = "testModeShapeConfig.json";
-    
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToCreateDefaultModelIfPathIsEmpty() throws Exception {
-        modeler.createDefaultModel( "" );
+        modeler.createDefaultModel( " " );
     }
     
     @Test( expected = IllegalArgumentException.class )
@@ -103,48 +100,34 @@ public final class ModelerTest extends BaseTest {
     
     @Test
     public void shouldGetChangedModeShapeConfigurationPath() {
-        
-        assertThat( new Modeler( TEST_MODESHAPE_CONFIGURATION_PATH ).manager.modeShapeConfigurationPath, is( TEST_MODESHAPE_CONFIGURATION_PATH ) );
+        assertThat( modeler.modeShapeConfigurationPath(), is( TEST_MODESHAPE_CONFIGURATION_PATH ) );
     }
     
     @Test
-    public void shouldGetDefaultModeShapeConfigurationPathIfNotSet() {
-        assertThat( modeler.manager.modeShapeConfigurationPath, is( Manager.DEFAULT_MODESHAPE_CONFIGURATION_PATH ) );
+    public void shouldGetDefaultModeShapeConfigurationPathIfNotSet() throws Exception {
+        this.modeler.close();
+        final Modeler modeler = new Modeler( this.modeler.repositoryStoreParentPath() );
+        assertThat( modeler.modeShapeConfigurationPath(), is( Modeler.DEFAULT_MODESHAPE_CONFIGURATION_PATH ) );
+        modeler.close();
     }
     
     @Test
-    public void shouldGetSession() throws Exception {
-        final Session session = session();
-        assertThat( session, notNullValue() );
-        final Session newSession = session();
-        assertThat( newSession, notNullValue() );
-        assertThat( newSession, not( session ) );
-        session.logout();
-        newSession.logout();
+    public void shouldGetRepositoryStoreParentPath() {
+        assertThat( modeler.repositoryStoreParentPath(), is( TEST_REPOSITORY_STORE_PARENT_PATH ) );
     }
     
     @Test
     public void shouldImportContent() throws Exception {
         final String path = modeler.importContent( "stuff", stream( "stuff" ), null );
         assertThat( path, is( "/stuff" ) );
-        final Session session = session();
-        final Node node = session.getNode( path );
-        assertThat( node, notNullValue() );
-        assertThat( node.getNode( JcrLexicon.CONTENT.getString() ), notNullValue() );
-        assertThat( node.getNode( JcrLexicon.CONTENT.getString() ).getProperty( JcrLexicon.DATA.getString() ), notNullValue() );
-        session.logout();
+        verifyPathExistsWithContent( path );
     }
     
     @Test
     public void shouldImportContentToSuppliedPath() throws Exception {
         final String path = modeler.importContent( "stuff", stream( "stuff" ), "/test" );
         assertThat( path, is( "/test/stuff" ) );
-        final Session session = session();
-        final Node node = session.getNode( path );
-        assertThat( node, notNullValue() );
-        assertThat( node.getNode( JcrLexicon.CONTENT.getString() ), notNullValue() );
-        assertThat( node.getNode( JcrLexicon.CONTENT.getString() ).getProperty( JcrLexicon.DATA.getString() ), notNullValue() );
-        session.logout();
+        verifyPathExistsWithContent( path );
     }
     
     @Test
@@ -152,12 +135,7 @@ public final class ModelerTest extends BaseTest {
         final String path = modeler.importContent( new File( getClass().getClassLoader().getResource( "Books.xsd" ).toURI() ),
                                                    null );
         assertThat( path, is( "/Books.xsd" ) );
-        final Session session = session();
-        final Node node = session.getNode( path );
-        assertThat( node, notNullValue() );
-        assertThat( node.getNode( JcrLexicon.CONTENT.getString() ), notNullValue() );
-        assertThat( node.getNode( JcrLexicon.CONTENT.getString() ).getProperty( JcrLexicon.DATA.getString() ), notNullValue() );
-        session.logout();
+        verifyPathExistsWithContent( path );
     }
     
     @Test
@@ -165,11 +143,20 @@ public final class ModelerTest extends BaseTest {
         final String path = modeler.importContent( new File( getClass().getClassLoader().getResource( "Books.xsd" ).toURI() ),
                                                    "/test" );
         assertThat( path, is( "/test/Books.xsd" ) );
-        final Session session = session();
-        final Node node = session.getNode( path );
-        assertThat( node, notNullValue() );
-        assertThat( node.getNode( JcrLexicon.CONTENT.getString() ), notNullValue() );
-        assertThat( node.getNode( JcrLexicon.CONTENT.getString() ).getProperty( JcrLexicon.DATA.getString() ), notNullValue() );
-        session.logout();
+        verifyPathExistsWithContent( path );
+    }
+    
+    private void verifyPathExistsWithContent( final String path ) throws Exception {
+        manager.run( new Task< Void >() {
+            
+            @Override
+            public Void run( final Session session ) throws Exception {
+                final Node node = session.getNode( path );
+                assertThat( node, notNullValue() );
+                assertThat( node.getNode( JcrLexicon.CONTENT.getString() ), notNullValue() );
+                assertThat( node.getNode( JcrLexicon.CONTENT.getString() ).getProperty( JcrLexicon.DATA.getString() ), notNullValue() );
+                return null;
+            }
+        } );
     }
 }
