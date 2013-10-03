@@ -33,8 +33,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -47,6 +49,7 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.ValueFormatException;
+import javax.jcr.nodetype.NodeType;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -84,6 +87,11 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
     final LibraryClassLoader libraryClassLoader = new LibraryClassLoader();
     final Set< String > potentialSequencerClassNames = new HashSet<>();
     Path library;
+    
+    /**
+     * Key is the model type name.
+     */
+    final Map< String, DependencyProcessor > dependencyProcessors = new HashMap< String, DependencyProcessor >();
     
     /**
      * @param manager
@@ -144,6 +152,36 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                 return type == null ? null : type;
             }
         } );
+    }
+    
+    /**
+     * @param modelNode
+     *        the model node whose dependency processor is being requested (cannot be <code>null</code>)
+     * @return the dependency processor or <code>null</code> if not found
+     * @throws ModelerException
+     *         if specified node is not a model node or if an error occurs
+     */
+    public DependencyProcessor dependencyProcessor( final Node modelNode ) throws ModelerException {
+        CheckArg.isNotNull( modelNode, "modelNode" );
+        
+        try {
+            boolean foundMixin = false;
+            
+            for ( final NodeType mixin : modelNode.getMixinNodeTypes() ) {
+                if ( Manager.MODEL_NODE_MIXIN.equals( mixin.getName() ) ) {
+                    foundMixin = true;
+                    break;
+                }
+            }
+            
+            if ( !foundMixin ) {
+                throw new ModelerException( ModelerI18n.mustBeModelNode.text( modelNode.getName() ) );
+            }
+            
+            return dependencyProcessors.get( modelNode.getPath() );
+        } catch ( final Exception e ) {
+            throw new ModelerException( e );
+        }
     }
     
     /**

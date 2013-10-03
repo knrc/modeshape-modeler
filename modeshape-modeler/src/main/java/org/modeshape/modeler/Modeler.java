@@ -36,9 +36,11 @@ import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.ValueFactory;
 import org.modeshape.jcr.api.sequencer.Sequencer;
+import org.modeshape.modeler.impl.DependencyProcessor;
 import org.modeshape.modeler.impl.Manager;
 import org.modeshape.modeler.impl.ModelTypeImpl;
 import org.modeshape.modeler.impl.Task;
+import org.polyglotter.common.Logger;
 
 /**
  * 
@@ -78,45 +80,57 @@ public final class Modeler {
      *        the repository path to an artifact
      * @param modelType
      *        the type of model to be created for the supplied artifact
+     * @return the path to the model node (never <code>null</code>)
      * @throws ModelerException
      *         if any problem occurs
      */
-    public void createModel( final String artifactPath,
-                             final ModelType modelType ) throws ModelerException {
-        CheckArg.isNotEmpty( artifactPath, "contentPath" );
-        manager.run( new Task< Void >() {
+    public String createModel( final String artifactPath,
+                               final ModelType modelType ) throws ModelerException {
+        CheckArg.isNotEmpty( artifactPath, "artifactPath" );
+        return manager.run( new Task< String >() {
             
             @Override
-            public Void run( final Session session ) throws Exception {
+            public String run( final Session session ) throws Exception {
                 final Node contentNode = manager.fileNode( session, artifactPath );
                 ModelType type = modelType;
                 if ( modelType == null ) {
                     // If no model type supplied, use default model type if one exists
                     type = manager.modelTypeManager().defaultModelType( contentNode,
-                                                                    manager.modelTypeManager().modelTypes( contentNode ) );
+                                                                        manager.modelTypeManager().modelTypes( contentNode ) );
                     if ( type == null )
                         throw new IllegalArgumentException( ModelerI18n.unableToDetermineDefaultModelType.text( artifactPath ) );
                 }
                 // Build the model
                 final ValueFactory valueFactory = ( ValueFactory ) session.getValueFactory();
                 final Calendar cal = Calendar.getInstance();
-                ( ( ModelTypeImpl ) type ).sequencer().execute( contentNode.getNode( JcrLexicon.CONTENT.getString() )
-                                                                           .getProperty( JcrLexicon.DATA.getString() ),
-                                                                contentNode.addNode( type.name() ),
-                                                                new Sequencer.Context() {
-                                                                    
-                                                                    @Override
-                                                                    public Calendar getTimestamp() {
-                                                                        return cal;
-                                                                    }
-                                                                    
-                                                                    @Override
-                                                                    public ValueFactory valueFactory() {
-                                                                        return valueFactory;
-                                                                    }
-                                                                } );
-                session.save();
-                return null;
+                
+                final ModelTypeImpl modelType = ( ModelTypeImpl ) type;
+                final Node modelNode = contentNode.addNode( type.name() );
+                modelNode.addMixin( Manager.MODEL_NODE_MIXIN );
+                
+                final boolean save = modelType.sequencer().execute( contentNode.getNode( JcrLexicon.CONTENT.getString() )
+                                                                               .getProperty( JcrLexicon.DATA.getString() ),
+                                                                    modelNode,
+                                                                    new Sequencer.Context() {
+                                                                        
+                                                                        @Override
+                                                                        public Calendar getTimestamp() {
+                                                                            return cal;
+                                                                        }
+                                                                        
+                                                                        @Override
+                                                                        public ValueFactory valueFactory() {
+                                                                            return valueFactory;
+                                                                        }
+                                                                    } );
+                
+                if ( save ) {
+                    processDependencies( modelNode );
+                    session.save();
+                    return modelNode.getPath();
+                }
+                
+                throw new ModelerException( ModelerI18n.sessionNotSavedWhenCreatingModel.text( artifactPath ) );
             }
         } );
     }
@@ -178,6 +192,31 @@ public final class Modeler {
      */
     public ModelTypeManager modelTypeManager() {
         return manager.modelTypeManager();
+    }
+    
+    /**
+     * @param modelNode
+     *        the model node whose dependency processing is being requested (cannot be <code>null</code>)
+     * @return the path to the dependencies child node or <code>null</code> if no dependencies are found
+     * @throws ModelerException
+     *         if node is not a model nodel or if an error occurs
+     */
+    String processDependencies( final Node modelNode ) throws ModelerException {
+        CheckArg.isNotNull( modelNode, "modelNode" );
+        return manager.run( new Task< String >() {
+            
+            @Override
+            public String run( final Session session ) throws Exception {
+                final DependencyProcessor dependencyProcessor = manager.modelTypeManager().dependencyProcessor( modelNode );
+                
+                if ( dependencyProcessor == null ) {
+                    Logger.getLogger( getClass() ).debug( "No dependency processor found for model '" + modelNode.getName() + '\'' );
+                    return null;
+                }
+                
+                return dependencyProcessor.process( modelNode );
+            }
+        } );
     }
     
     /**

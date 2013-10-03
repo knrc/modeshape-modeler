@@ -67,6 +67,11 @@ public final class Manager {
      */
     public static final String UNSTRUCTURED_MIXIN = NS + "unstructured";
     
+    /**
+     * The mixin type of a model node.
+     */
+    public static final String MODEL_NODE_MIXIN = NS + "model";
+    
     @SuppressWarnings( "javadoc" )
     public final String modeShapeConfigurationPath;
     private ModeShapeEngine modeShape;

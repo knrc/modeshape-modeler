@@ -3,7 +3,7 @@
  * See the COPYRIGHT.txt file distributed with this work for information
  * regarding copyright ownership.  Some portions may be licensed
  * to Red Hat, Inc. under one or more contributor license agreements.
- * See the AUTHORS.txt file in the distribution for a full listing of 
+ * See the AUTHORS.txt file in the distribution for a full listing of
  * individual contributors.
  *
  * Polyglotter is free software. Unless otherwise indicated, all code in Polyglotter
@@ -24,15 +24,23 @@
 package org.modeshape.modeler;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 
+import javax.jcr.Node;
 import javax.jcr.Session;
 
 import org.junit.Test;
+import org.modeshape.modeler.impl.Manager;
+import org.modeshape.modeler.impl.ModelTypeManagerImpl;
+import org.modeshape.modeler.impl.Task;
 import org.modeshape.modeler.integration.BaseIntegrationTest;
 
 @SuppressWarnings( "javadoc" )
 public class ITModeler extends BaseIntegrationTest {
+    
+    private static final String XSD_SEQUENCER = "org.modeshape.sequencer.xsd.Xsd";
     
     // private void createDefaultModel( final String fileName,
     // final String modelType ) throws Exception {
@@ -57,15 +65,29 @@ public class ITModeler extends BaseIntegrationTest {
         final String path = importContent( XSD_CONTENT );
         ModelType modelType = null;
         for ( final ModelType type : modelTypeManager.modelTypes( path ) ) {
-            if ( type.name().equals( "org.modeshape.sequencer.xsd.Xsd" ) ) {
+            if ( type.name().equals( XSD_SEQUENCER ) ) {
                 modelType = type;
                 break;
             }
         }
         modeler.createModel( path, modelType );
         final Session session = session();
-        assertThat( session.getNode( path ).hasNode( "org.modeshape.sequencer.xsd.Xsd" ), is( true ) );
+        assertThat( session.getNode( path ).hasNode( XSD_SEQUENCER ), is( true ) );
         session.logout();
+    }
+    
+    @Test( expected = ModelerException.class )
+    public void shouldFailProcessingDependenciesWhenNodeIsNotAModelNode() throws Exception {
+        final Modeler accessModeler = modeler;
+        modeler.manager.run( new Task< Void >() {
+            
+            @Override
+            public Void run( final Session session ) throws Exception {
+                final Node rootNode = session().getRootNode();
+                accessModeler.processDependencies( rootNode );
+                return null;
+            }
+        } );
     }
     
     @Test( expected = ModelerException.class )
@@ -85,4 +107,53 @@ public class ITModeler extends BaseIntegrationTest {
         modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "xml" );
         modeler.createModel( importContent( "stuff" ), modelTypeManager.modelTypes().iterator().next() );
     }
+    
+    @Test
+    public void shouldNotFindDependencyProcessorForXsdModelNode() throws Exception {
+        modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "sramp" );
+        modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "xsd" );
+        
+        // find XSD model type
+        ModelType xsdModelType = null;
+        
+        for ( final ModelType type : modelTypeManager.modelTypes() ) {
+            if ( type.name().equals( XSD_SEQUENCER ) ) {
+                xsdModelType = type;
+                break;
+            }
+        }
+        
+        assertThat( xsdModelType, notNullValue() );
+        
+        final String path = importContent( XSD_CONTENT );
+        final String modelNodePath = modeler.createModel( path, xsdModelType );
+        final ModelTypeManagerImpl modelTypeMgr = modelTypeManager;
+        
+        modeler.manager.run( new Task< Void >() {
+            
+            @Override
+            public Void run( final Session session ) throws Exception {
+                final Node modelNode = session.getNode( modelNodePath );
+                assertThat( modelTypeMgr.dependencyProcessor( modelNode ), nullValue() );
+                return null;
+            }
+        } );
+    }
+    
+    @Test
+    public void shouldProcessModelNodeWhenNoDependencyProcessorFound() throws Exception {
+        final Modeler accessModeler = modeler;
+        modeler.manager.run( new Task< Void >() {
+            
+            @Override
+            public Void run( final Session session ) throws Exception {
+                final Node rootNode = session.getRootNode();
+                final Node modelNode = rootNode.addNode( "elvis" );
+                modelNode.addMixin( Manager.MODEL_NODE_MIXIN );
+                assertThat( accessModeler.processDependencies( modelNode ), nullValue() );
+                return null;
+            }
+        } );
+    }
+    
 }
