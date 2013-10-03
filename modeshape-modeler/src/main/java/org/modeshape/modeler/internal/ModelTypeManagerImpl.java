@@ -73,6 +73,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
     static final String ZIPS = "zips";
     static final String JARS = "jars";
     private static final String MODEL_TYPES = "modelTypes";
+    private static final String CATEGORY = "category";
     private static final String SEQUENCER_CLASS = "sequencerClass";
     private static final String POTENTIAL_SEQUENCER_CLASS_NAMES = "potentialSequencerClassNames";
     
@@ -141,6 +142,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                 for ( final NodeIterator iter = systemNode.getNode( MODEL_TYPES ).getNodes(); iter.hasNext(); ) {
                     final Node node = iter.nextNode();
                     modelTypes.add( new ModelTypeImpl( manager,
+                                                       node.getProperty( CATEGORY ).getString(),
                                                        node.getName(),
                                                        libraryClassLoader.loadClass( node.getProperty( SEQUENCER_CLASS ).getString() ) ) );
                 }
@@ -327,7 +329,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                                     Modeler.class.getPackage().getName() + '.' + category + '.' + sequencerClass.getSimpleName();
                                 name =
                                     name.endsWith( "Sequencer" ) ? name.substring( 0, name.length() - "Sequencer".length() ) : name;
-                                final ModelTypeImpl type = new ModelTypeImpl( manager, name, sequencerClass );
+                                final ModelTypeImpl type = new ModelTypeImpl( manager, category, name, sequencerClass );
                                 modelTypes.add( type );
                                 manager.run( this, new SystemTask< Void >() {
                                     
@@ -336,6 +338,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                                                      final Node systemNode ) throws Exception {
                                         final Node node = systemNode.getNode( MODEL_TYPES ).addNode( type.name() );
                                         node.setProperty( SEQUENCER_CLASS, sequencerClass.getName() );
+                                        node.setProperty( CATEGORY, type.category() );
                                         session.save();
                                         return null;
                                     }
@@ -379,10 +382,10 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.modeler.ModelTypeManager#modelTypeCategories()
+     * @see org.modeshape.modeler.ModelTypeManager#installableModelTypeCategories()
      */
     @Override
-    public Set< String > modelTypeCategories() throws ModelerException {
+    public Set< String > installableModelTypeCategories() throws ModelerException {
         final Set< String > categories = new HashSet<>();
         for ( final URL repositoryUrl : modelTypeRepositories ) {
             try {
@@ -396,6 +399,19 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                 throw new ModelerException( e );
             }
         }
+        return categories;
+    }
+    
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.modeler.ModelTypeManager#modelTypeCategories()
+     */
+    @Override
+    public Set< String > modelTypeCategories() {
+        final Set< String > categories = new HashSet<>();
+        for ( final ModelType type : modelTypes )
+            categories.add( type.category() );
         return categories;
     }
     
@@ -439,10 +455,10 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.modeler.ModelTypeManager#modelTypes(java.lang.String)
+     * @see org.modeshape.modeler.ModelTypeManager#modelTypesForArtifact(java.lang.String)
      */
     @Override
-    public Set< ModelType > modelTypes( final String filePath ) throws ModelerException {
+    public Set< ModelType > modelTypesForArtifact( final String filePath ) throws ModelerException {
         CheckArg.isNotEmpty( filePath, "filePath" );
         return manager.run( new Task< Set< ModelType > >() {
             
@@ -451,6 +467,20 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                 return modelTypes( manager.artifactNode( session, filePath ) );
             }
         } );
+    }
+    
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.modeler.ModelTypeManager#modelTypesForCategory(java.lang.String)
+     */
+    @Override
+    public Set< ModelType > modelTypesForCategory( final String category ) {
+        CheckArg.isNotEmpty( category, "category" );
+        final Set< ModelType > types = new HashSet<>();
+        for ( final ModelType type : modelTypes )
+            if ( category.equals( type.category() ) ) types.add( type );
+        return types;
     }
     
     /**

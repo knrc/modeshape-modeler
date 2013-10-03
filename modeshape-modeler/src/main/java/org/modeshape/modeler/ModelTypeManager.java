@@ -56,7 +56,7 @@ public interface ModelTypeManager {
     
     /**
      * @param category
-     *        the name of an available {@link #modelTypeCategories() category} of model types from an on-line <a
+     *        the name of an {@link #installableModelTypeCategories() installable model type category} from an on-line <a
      *        href="http://maven.apache.org">Maven</a> {@link #modelTypeRepositories() model type repository}
      * @return the set of names of potential sequencer classes that could not be instantiated, usually due to missing dependencies.
      * @throws ModelerException
@@ -65,15 +65,21 @@ public interface ModelTypeManager {
     Set< String > install( final String category ) throws ModelerException;
     
     /**
-     * @return the available {@link ModelType model type} categories for the repository with the supplied URL
+     * @return the installable {@link ModelType model type} categories from the {@link #modelTypeRepositories() registered
+     *         repositories}
      * @throws ModelerException
      *         if any problem occurs
      */
-    Set< String > modelTypeCategories() throws ModelerException;
+    Set< String > installableModelTypeCategories() throws ModelerException;
+    
+    /**
+     * @return the installed model type categories; never <code>null</code>.
+     */
+    Set< String > modelTypeCategories();
     
     /**
      * @return the {@link #registerModelTypeRepository(URL) registered} <a href="http://maven.apache.org">Maven</a> model type
-     *         repository URLs, ordered by how they will searched when {@link #modelTypeCategories() retrieving} or
+     *         repository URLs, ordered by how they will searched when {@link #installableModelTypeCategories() retrieving} or
      *         {@link #install(String) installing} model type categories
      */
     List< URL > modelTypeRepositories();
@@ -90,14 +96,21 @@ public interface ModelTypeManager {
      * @throws ModelerException
      *         if any problem occurs
      */
-    Set< ModelType > modelTypes( final String artifactPath ) throws ModelerException;
+    Set< ModelType > modelTypesForArtifact( final String artifactPath ) throws ModelerException;
+    
+    /**
+     * @param category
+     *        an {@link #modelTypeCategories() installed model type category}
+     * @return the available model types for the supplied category
+     */
+    Set< ModelType > modelTypesForCategory( String category );
     
     /**
      * @param repositoryUrl
      *        a URL to an on-line <a href="http://maven.apache.org">Maven</a> {@link #modelTypeRepositories() model type repository}
      * @return the registered <a href="http://maven.apache.org">Maven</a> {@link #modelTypeRepositories() model type repository}
-     *         URLs, ordered by how they will searched when {@link #modelTypeCategories() retrieving} or {@link #install(String)
-     *         installing} model type categories
+     *         URLs, ordered by how they will searched when {@link #installableModelTypeCategories() retrieving} or
+     *         {@link #install(String) installing} model type categories
      * @throws ModelerException
      *         if any error occurs
      */
@@ -108,7 +121,7 @@ public interface ModelTypeManager {
      *        a URL to an on-line <a href="http://maven.apache.org">Maven</a> {@link #modelTypeRepositories() model type repository}
      * @return the {@link #registerModelTypeRepository(URL) registered} <a href="http://maven.apache.org">Maven</a>
      *         {@link #modelTypeRepositories() model type repository} URLs, ordered by how they will searched when
-     *         {@link #modelTypeCategories() retrieving} or {@link #install(String) installing} model type categories
+     *         {@link #installableModelTypeCategories() retrieving} or {@link #install(String) installing} model type categories
      * @throws ModelerException
      *         if any error occurs
      */
