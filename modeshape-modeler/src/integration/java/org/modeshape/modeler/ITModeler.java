@@ -62,7 +62,7 @@ public class ITModeler extends BaseIntegrationTest {
         modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "xml" );
         modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "sramp" );
         modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "xsd" );
-        final String path = importContent( XSD_CONTENT );
+        final String path = importArtifact( XSD_ARTIFACT );
         ModelType modelType = null;
         for ( final ModelType type : modelTypeManager.modelTypes( path ) ) {
             if ( type.name().equals( XSD_SEQUENCER ) ) {
@@ -97,19 +97,19 @@ public class ITModeler extends BaseIntegrationTest {
     @Test( expected = ModelerException.class )
     public void shouldFailToCreateDefaultModelIfFileIsInvalid() throws Exception {
         modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "xml" );
-        modeler.createDefaultModel( importContent( XML_CONTENT + "<stuff>" ) );
+        modeler.createDefaultModel( importArtifact( XML_ARTIFACT + "<stuff>" ) );
     }
     
     @Test( expected = ModelerException.class )
     public void shouldFailToCreateModelIfFileIsInvalid() throws Exception {
         modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "xml" );
-        modeler.createModel( importContent( XML_CONTENT + "<stuff>" ), modelTypeManager.modelTypes().iterator().next() );
+        modeler.createModel( importArtifact( XML_ARTIFACT + "<stuff>" ), modelTypeManager.modelTypes().iterator().next() );
     }
     
     @Test( expected = ModelerException.class )
     public void shouldFailToCreateModelIfTypeIsInapplicable() throws Exception {
         modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "xml" );
-        modeler.createModel( importContent( "stuff" ), modelTypeManager.modelTypes().iterator().next() );
+        modeler.createModel( importArtifact( "stuff" ), modelTypeManager.modelTypes().iterator().next() );
     }
     
     @Test
@@ -129,7 +129,7 @@ public class ITModeler extends BaseIntegrationTest {
         
         assertThat( xsdModelType, notNullValue() );
         
-        final String path = importContent( XSD_CONTENT );
+        final String path = importArtifact( XSD_ARTIFACT );
         final String modelNodePath = modeler.createModel( path, xsdModelType );
         final ModelTypeManagerImpl modelTypeMgr = modelTypeManager;
         

@@ -23,22 +23,15 @@
  */
 package org.modeshape.modeler.impl;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.concurrent.ExecutionException;
-import java.util.zip.ZipInputStream;
 
-import javax.jcr.Binary;
 import javax.jcr.Node;
-import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.jcr.ValueFormatException;
 
 import org.modeshape.common.collection.Problem;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.util.CheckArg;
-import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.NoSuchRepositoryException;
@@ -125,6 +118,20 @@ public final class Manager {
     }
     
     /**
+     * @param session
+     *        a session
+     * @param filePath
+     *        a file's repository path
+     * @return the node with the supplied filePath
+     * @throws Exception
+     *         if any problem occurs
+     */
+    public Node artifactNode( final Session session,
+                              final String filePath ) throws Exception {
+        return session.getNode( filePath.charAt( 0 ) == '/' ? filePath : '/' + filePath );
+    }
+    
+    /**
      * @throws ModelerException
      *         if any problem occurs
      */
@@ -135,34 +142,6 @@ public final class Manager {
             throw new ModelerException( e );
         }
         Logger.getLogger( getClass() ).info( ModelerI18n.modelerStopped );
-    }
-    
-    Binary content( final Node fileNode ) throws ValueFormatException, PathNotFoundException, RepositoryException {
-        return fileNode.getNode( JcrLexicon.CONTENT.getString() ).getProperty( JcrLexicon.DATA.getString() ).getBinary();
-    }
-    
-    byte[] content( final ZipInputStream zip ) throws IOException {
-        try ( final ByteArrayOutputStream stream = new ByteArrayOutputStream() ) {
-            final byte[] buf = new byte[ 1024 ];
-            for ( int bytesRead; ( bytesRead = zip.read( buf, 0, buf.length ) ) > -1; )
-                stream.write( buf, 0, bytesRead );
-            return stream.toByteArray();
-        }
-    }
-    
-    /**
-     * @param session
-     *        a session
-     * @param filePath
-     *        a file's repository path
-     * @return the node with the supplied filePath
-     * @throws Exception
-     *         if any problem occurs
-     */
-    public Node fileNode( final Session session,
-                          final String filePath ) throws Exception {
-        // Return an absolute path
-        return session.getNode( filePath.charAt( 0 ) == '/' ? filePath : '/' + filePath );
     }
     
     /**
