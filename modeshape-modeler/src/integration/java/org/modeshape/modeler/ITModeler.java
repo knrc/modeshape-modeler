@@ -32,10 +32,10 @@ import javax.jcr.Node;
 import javax.jcr.Session;
 
 import org.junit.Test;
-import org.modeshape.modeler.impl.Manager;
-import org.modeshape.modeler.impl.ModelTypeManagerImpl;
-import org.modeshape.modeler.impl.Task;
 import org.modeshape.modeler.integration.BaseIntegrationTest;
+import org.modeshape.modeler.internal.Manager;
+import org.modeshape.modeler.internal.ModelTypeManagerImpl;
+import org.modeshape.modeler.internal.Task;
 
 @SuppressWarnings( "javadoc" )
 public class ITModeler extends BaseIntegrationTest {

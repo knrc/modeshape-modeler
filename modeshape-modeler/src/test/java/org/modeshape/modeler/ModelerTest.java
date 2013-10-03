@@ -34,7 +34,7 @@ import javax.jcr.Session;
 
 import org.junit.Test;
 import org.modeshape.jcr.JcrLexicon;
-import org.modeshape.modeler.impl.Task;
+import org.modeshape.modeler.internal.Task;
 import org.modeshape.modeler.test.BaseTest;
 
 /**

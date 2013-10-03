@@ -21,7 +21,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.modeler.impl;
+package org.modeshape.modeler.internal;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
@@ -41,6 +41,8 @@ import org.junit.Test;
 import org.modeshape.modeler.ModelType;
 import org.modeshape.modeler.Modeler;
 import org.modeshape.modeler.TestUtil;
+import org.modeshape.modeler.internal.ModelTypeManagerImpl;
+import org.modeshape.modeler.internal.SystemTask;
 import org.modeshape.modeler.test.BaseTest;
 
 @SuppressWarnings( "javadoc" )

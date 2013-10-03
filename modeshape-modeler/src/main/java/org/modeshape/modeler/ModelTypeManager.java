@@ -27,7 +27,7 @@ import java.net.URL;
 import java.util.Set;
 
 import org.modeshape.jcr.api.sequencer.Sequencer;
-import org.modeshape.modeler.impl.ModelTypeManagerImpl;
+import org.modeshape.modeler.internal.ModelTypeManagerImpl;
 
 /**
  * 
