@@ -24,29 +24,22 @@
 
 package org.modeshape.modeler;
 
+import org.polyglotter.common.I18n;
+
 /**
  * 
  */
 public class ModelerException extends Exception {
     
     /**
-     * @param message
-     *        the detail message
+     * @param i18n
+     *        an internationalized message
+     * @param arguments
+     *        arguments to the internationalized message
      */
-    public ModelerException( final String message ) {
-        super( message );
-        
-    }
-    
-    /**
-     * @param message
-     *        the detail message
-     * @param cause
-     *        the underlying Throwable that caused of this exception
-     */
-    public ModelerException( final String message,
-                             final Throwable cause ) {
-        super( message, cause );
+    public ModelerException( final I18n i18n,
+                             final Object... arguments ) {
+        super( i18n.text( arguments ) );
         
     }
     
@@ -56,5 +49,19 @@ public class ModelerException extends Exception {
      */
     public ModelerException( final Throwable cause ) {
         super( cause );
+    }
+    
+    /**
+     * @param cause
+     *        the underlying Throwable that caused of this exception
+     * @param i18n
+     *        an internationalized message
+     * @param arguments
+     *        arguments to the internationalized message
+     */
+    public ModelerException( final Throwable cause,
+                             final I18n i18n,
+                             final Object... arguments ) {
+        super( i18n.text( arguments ), cause );
     }
 }

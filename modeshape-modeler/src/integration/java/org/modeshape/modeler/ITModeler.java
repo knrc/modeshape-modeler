@@ -40,32 +40,17 @@ import org.modeshape.modeler.internal.Task;
 @SuppressWarnings( "javadoc" )
 public class ITModeler extends BaseIntegrationTest {
     
-    private static final String XSD_SEQUENCER = "org.modeshape.sequencer.xsd.Xsd";
-    
-    // private void createDefaultModel( final String fileName,
-    // final String modelType ) throws Exception {
-    // final String path = upload( fileName );
-    // modeler.createDefaultModel( path );
-    // final Session session = session();
-    // assertThat( session.getNode( path ).getNode( modelType ), notNullValue() );
-    // session.logout();
-    // }
-    //
-    // @Test
-    // public void shouldCreateModelOfDefaultTypeIfNotSupplied() throws Exception {
-    // createDefaultModel( "pom.xml", XmlSequencer.class.getSimpleName() );
-    // createDefaultModel( "Books.xsd", XsdSequencer.class.getSimpleName() );
-    // }
+    private static final String XSD_MODEL_TYPE_NAME = "org.modeshape.modeler.xsd.Xsd";
     
     @Test
     public void shouldCreateModelOfSuppliedType() throws Exception {
-        modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "xml" );
-        modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "sramp" );
-        modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "xsd" );
+        modelTypeManager.install( "xml" );
+        modelTypeManager.install( "sramp" );
+        modelTypeManager.install( "xsd" );
         final String path = importArtifact( XSD_ARTIFACT );
         ModelType modelType = null;
         for ( final ModelType type : modelTypeManager.modelTypes( path ) ) {
-            if ( type.name().equals( XSD_SEQUENCER ) ) {
+            if ( type.name().equals( XSD_MODEL_TYPE_NAME ) ) {
                 modelType = type;
                 break;
             }
@@ -75,7 +60,7 @@ public class ITModeler extends BaseIntegrationTest {
             
             @Override
             public Void run( final Session session ) throws Exception {
-                assertThat( session.getNode( path ).hasNode( XSD_SEQUENCER ), is( true ) );
+                assertThat( session.getNode( path ).hasNode( XSD_MODEL_TYPE_NAME ), is( true ) );
                 return null;
             }
         } );
@@ -96,32 +81,32 @@ public class ITModeler extends BaseIntegrationTest {
     
     @Test( expected = ModelerException.class )
     public void shouldFailToCreateDefaultModelIfFileIsInvalid() throws Exception {
-        modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "xml" );
+        modelTypeManager.install( "xml" );
         modeler.createDefaultModel( importArtifact( XML_ARTIFACT + "<stuff>" ) );
     }
     
     @Test( expected = ModelerException.class )
     public void shouldFailToCreateModelIfFileIsInvalid() throws Exception {
-        modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "xml" );
+        modelTypeManager.install( "xml" );
         modeler.createModel( importArtifact( XML_ARTIFACT + "<stuff>" ), modelTypeManager.modelTypes().iterator().next() );
     }
     
     @Test( expected = ModelerException.class )
     public void shouldFailToCreateModelIfTypeIsInapplicable() throws Exception {
-        modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "xml" );
+        modelTypeManager.install( "xml" );
         modeler.createModel( importArtifact( "stuff" ), modelTypeManager.modelTypes().iterator().next() );
     }
     
     @Test
     public void shouldNotFindDependencyProcessorForXsdModelNode() throws Exception {
-        modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "sramp" );
-        modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "xsd" );
+        modelTypeManager.install( "sramp" );
+        modelTypeManager.install( "xsd" );
         
         // find XSD model type
         ModelType xsdModelType = null;
         
         for ( final ModelType type : modelTypeManager.modelTypes() ) {
-            if ( type.name().equals( XSD_SEQUENCER ) ) {
+            if ( type.name().equals( XSD_MODEL_TYPE_NAME ) ) {
                 xsdModelType = type;
                 break;
             }

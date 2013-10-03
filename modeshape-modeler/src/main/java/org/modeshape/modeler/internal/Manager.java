@@ -47,14 +47,19 @@ import org.polyglotter.common.Logger;
 public final class Manager {
     
     /**
-     * 
+     * ModeShape Modeler namespace prefix
      */
     public static final String NS = "mm:";
     
     /**
-     * 
+     * the mixin applied to imported files that enables models to be created as children of those files
      */
     public static final String UNSTRUCTURED_MIXIN = NS + "unstructured";
+    
+    /**
+     * The mixin type of a model node.
+     */
+    public static final String MODEL_NODE_MIXIN = NS + "model";
     
     /**
      * 
@@ -63,11 +68,6 @@ public final class Manager {
     
     private final ModeShapeEngine modeShape;
     final JcrRepository repository;
-    
-    /**
-     * The mixin type of a model node.
-     */
-    public static final String MODEL_NODE_MIXIN = NS + "model";
     
     /**
      * 

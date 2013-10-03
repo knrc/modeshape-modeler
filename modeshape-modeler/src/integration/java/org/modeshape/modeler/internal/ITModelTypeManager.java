@@ -28,6 +28,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 
+import java.net.URL;
 import java.util.Set;
 
 import javax.jcr.Node;
@@ -35,11 +36,9 @@ import javax.jcr.Session;
 
 import org.junit.Test;
 import org.modeshape.modeler.ModelType;
+import org.modeshape.modeler.ModelTypeManager;
 import org.modeshape.modeler.ModelerException;
 import org.modeshape.modeler.integration.BaseIntegrationTest;
-import org.modeshape.modeler.internal.Manager;
-import org.modeshape.modeler.internal.ModelTypeManagerImpl;
-import org.modeshape.modeler.internal.Task;
 
 /**
  * Tests for {@link ModelTypeManagerImpl}.
@@ -78,44 +77,45 @@ public class ITModelTypeManager extends BaseIntegrationTest {
     
     @Test
     public void shouldGetApplicablemodelTypeManager() throws Exception {
-        modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "sramp" );
-        modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "xsd" );
+        modelTypeManager.install( "sramp" );
+        modelTypeManager.install( "xsd" );
         final Set< ModelType > types = modelTypeManager.modelTypes( importArtifact( XSD_ARTIFACT ) );
         assertThat( types, notNullValue() );
         assertThat( types.isEmpty(), is( false ) );
     }
     
     @Test
-    public void shouldGetSequencerGroups() throws Exception {
-        assertThat( modelTypeManager.sequencerGroups( HTTP_SEQUENCER_REPOSITORY ).isEmpty(), is( false ) );
+    public void shouldGetModelTypeCategories() throws Exception {
+        assertThat( modelTypeManager.modelTypeCategories().isEmpty(), is( false ) );
     }
     
     @Test
-    public void shouldIniitializeSequencerRepositories() {
-        assertThat( modelTypeManager.sequencerRepositories().contains( HTTP_SEQUENCER_REPOSITORY ), is( true ) );
+    public void shouldIniitializeModelTypeRepositories() throws Exception {
+        assertThat( modelTypeManager.modelTypeRepositories().contains( new URL( ModelTypeManager.JBOSS_MODEL_TYPE_REPOSITORY ) ), is( true ) );
+        assertThat( modelTypeManager.modelTypeRepositories().contains( new URL( ModelTypeManager.MAVEN_MODEL_TYPE_REPOSITORY ) ), is( true ) );
     }
     
     @Test
-    public void shouldInstallSequencer() throws Exception {
-        final Set< String > potentialSequencerClassNames = modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "java" );
+    public void shouldInstallModelTypes() throws Exception {
+        final Set< String > potentialSequencerClassNames = modelTypeManager.install( "java" );
         assertThat( potentialSequencerClassNames.isEmpty(), is( true ) );
         assertThat( modelTypeManager.modelTypes().isEmpty(), is( false ) );
     }
     
     @Test
-    public void shouldOnlyInstallSequencerOnce() throws Exception {
-        modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "java" );
+    public void shouldOnlyInstallModelTypeCategoryOnce() throws Exception {
+        modelTypeManager.install( "java" );
         assertThat( modelTypeManager.modelTypes().isEmpty(), is( false ) );
         final int size = modelTypeManager.modelTypes().size();
-        modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "java" );
+        modelTypeManager.install( "java" );
         assertThat( modelTypeManager.modelTypes().size(), is( size ) );
     }
     
     @Test
     public void shouldReturnUninstantiablePotentialSequencerClassNames() throws Exception {
-        Set< String > potentialSequencerClassNames = modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "xsd" );
+        Set< String > potentialSequencerClassNames = modelTypeManager.install( "xsd" );
         assertThat( potentialSequencerClassNames.isEmpty(), is( false ) );
-        potentialSequencerClassNames = modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "sramp" );
+        potentialSequencerClassNames = modelTypeManager.install( "sramp" );
         assertThat( potentialSequencerClassNames.isEmpty(), is( true ) );
     }
 }

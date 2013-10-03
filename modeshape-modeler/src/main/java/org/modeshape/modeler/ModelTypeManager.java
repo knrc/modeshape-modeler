@@ -24,9 +24,9 @@
 package org.modeshape.modeler;
 
 import java.net.URL;
+import java.util.List;
 import java.util.Set;
 
-import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.modeler.internal.ModelTypeManagerImpl;
 
 /**
@@ -37,13 +37,13 @@ public interface ModelTypeManager {
     /**
      * 
      */
-    String JBOSS_SEQUENCER_REPOSITORY = "https://repository.jboss.org/nexus/content/groups/public-jboss"
-                                        + ModelTypeManagerImpl.MODESHAPE_GROUP;
+    String JBOSS_MODEL_TYPE_REPOSITORY = "https://repository.jboss.org/nexus/content/groups/public-jboss"
+                                         + ModelTypeManagerImpl.MODESHAPE_GROUP;
     
     /**
      * 
      */
-    String MAVEN_SEQUENCER_REPOSITORY = "http://repo1.maven.org/maven2" + ModelTypeManagerImpl.MODESHAPE_GROUP;
+    String MAVEN_MODEL_TYPE_REPOSITORY = "http://repo1.maven.org/maven2" + ModelTypeManagerImpl.MODESHAPE_GROUP;
     
     /**
      * @param artifactPath
@@ -55,18 +55,28 @@ public interface ModelTypeManager {
     ModelType defaultModelType( final String artifactPath ) throws ModelerException;
     
     /**
-     * @param repositoryUrl
-     *        a {@link #sequencerRepositories() URL} to an on-line <a href="http://maven.apache.org">Maven</a> {@link Sequencer}
-     *        repository
-     * @param group
-     *        the name of an available {@link #sequencerGroups(URL) group} of sequencers from an on-line <a
-     *        href="http://maven.apache.org">Maven</a> {@link Sequencer} repository
+     * @param category
+     *        the name of an available {@link #modelTypeCategories() category} of model types from an on-line <a
+     *        href="http://maven.apache.org">Maven</a> {@link #modelTypeRepositories() model type repository}
      * @return the set of names of potential sequencer classes that could not be instantiated, usually due to missing dependencies.
      * @throws ModelerException
      *         if any problem occurs
      */
-    Set< String > installSequencers( final URL repositoryUrl,
-                                     final String group ) throws ModelerException;
+    Set< String > install( final String category ) throws ModelerException;
+    
+    /**
+     * @return the available {@link ModelType model type} categories for the repository with the supplied URL
+     * @throws ModelerException
+     *         if any problem occurs
+     */
+    Set< String > modelTypeCategories() throws ModelerException;
+    
+    /**
+     * @return the {@link #registerModelTypeRepository(URL) registered} <a href="http://maven.apache.org">Maven</a> model type
+     *         repository URLs, ordered by how they will searched when {@link #modelTypeCategories() retrieving} or
+     *         {@link #install(String) installing} model type categories
+     */
+    List< URL > modelTypeRepositories();
     
     /**
      * @return the available model types
@@ -84,38 +94,23 @@ public interface ModelTypeManager {
     
     /**
      * @param repositoryUrl
-     *        a URL to an on-line <a href="http://maven.apache.org">Maven</a> {@link Sequencer} repository
-     * @return the {@link #registerSequencerRepository(URL) registered} <a href="http://maven.apache.org">Maven</a>
-     *         {@link Sequencer} repository URLs
+     *        a URL to an on-line <a href="http://maven.apache.org">Maven</a> {@link #modelTypeRepositories() model type repository}
+     * @return the registered <a href="http://maven.apache.org">Maven</a> {@link #modelTypeRepositories() model type repository}
+     *         URLs, ordered by how they will searched when {@link #modelTypeCategories() retrieving} or {@link #install(String)
+     *         installing} model type categories
      * @throws ModelerException
      *         if any error occurs
      */
-    Set< URL > registerSequencerRepository( final URL repositoryUrl ) throws ModelerException;
+    List< URL > registerModelTypeRepository( final URL repositoryUrl ) throws ModelerException;
     
     /**
      * @param repositoryUrl
-     *        a {@link #sequencerRepositories() URL} to an on-line <a href="http://maven.apache.org">Maven</a> {@link Sequencer}
-     *        repository
-     * @return the available sequencer groups for the repository with the supplied URL
-     * @throws ModelerException
-     *         if any problem occurs
-     */
-    Set< String > sequencerGroups( final URL repositoryUrl ) throws ModelerException;
-    
-    /**
-     * @return the {@link #registerSequencerRepository(URL) registered} <a href="http://maven.apache.org">Maven</a>
-     *         {@link Sequencer} repository URLs
-     */
-    Set< URL > sequencerRepositories();
-    
-    /**
-     * @param repositoryUrl
-     *        a URL to a {@link #registerSequencerRepository(URL) registered} on-line <a href="http://maven.apache.org">Maven</a>
-     *        {@link Sequencer} repository
-     * @return the {@link #registerSequencerRepository(URL) registered} <a href="http://maven.apache.org">Maven</a>
-     *         {@link Sequencer} repository URLs
+     *        a URL to an on-line <a href="http://maven.apache.org">Maven</a> {@link #modelTypeRepositories() model type repository}
+     * @return the {@link #registerModelTypeRepository(URL) registered} <a href="http://maven.apache.org">Maven</a>
+     *         {@link #modelTypeRepositories() model type repository} URLs, ordered by how they will searched when
+     *         {@link #modelTypeCategories() retrieving} or {@link #install(String) installing} model type categories
      * @throws ModelerException
      *         if any error occurs
      */
-    Set< URL > unregisterSequencerRepository( final URL repositoryUrl ) throws ModelerException;
+    List< URL > unregisterModelTypeRepository( final URL repositoryUrl ) throws ModelerException;
 }
