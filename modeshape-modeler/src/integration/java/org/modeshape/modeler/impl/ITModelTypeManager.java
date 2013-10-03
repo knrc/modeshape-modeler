@@ -35,7 +35,6 @@ import javax.jcr.Session;
 
 import org.junit.Test;
 import org.modeshape.modeler.ModelType;
-import org.modeshape.modeler.ModelTypeManager;
 import org.modeshape.modeler.ModelerException;
 import org.modeshape.modeler.integration.BaseIntegrationTest;
 
@@ -44,6 +43,21 @@ import org.modeshape.modeler.integration.BaseIntegrationTest;
  */
 @SuppressWarnings( "javadoc" )
 public class ITModelTypeManager extends BaseIntegrationTest {
+    
+    @Test
+    public void shouldAllowRequestWhenModelTypeDoesNotHaveDependencyProcessor() throws Exception {
+        manager.run( new Task< Void >() {
+            
+            @Override
+            public Void run( final Session session ) throws Exception {
+                final Node rootNode = session.getRootNode();
+                final Node modelNode = rootNode.addNode( "elvis" );
+                modelNode.addMixin( Manager.MODEL_NODE_MIXIN );
+                assertThat( modelTypeManager.dependencyProcessor( modelNode ), nullValue() );
+                return null;
+            }
+        } );
+    }
     
     @Test( expected = ModelerException.class )
     public void shouldFailToProcessDependenciesWhenNotAModelNode() throws Exception {
@@ -60,17 +74,9 @@ public class ITModelTypeManager extends BaseIntegrationTest {
     }
     
     @Test
-    public void shouldAllowRequestWhenModelTypeDoesNotHaveDependencyProcessor() throws Exception {
-        final Node rootNode = session().getRootNode();
-        final Node modelNode = rootNode.addNode( "elvis" );
-        modelNode.addMixin( Manager.MODEL_NODE_MIXIN );
-        assertThat( modelTypeManager.dependencyProcessor( modelNode ), nullValue() );
-    }
-    
-    @Test
     public void shouldGetApplicablemodelTypeManager() throws Exception {
-        modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "sramp" );
-        modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "xsd" );
+        modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "sramp" );
+        modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "xsd" );
         final Set< ModelType > types = modelTypeManager.modelTypes( importContent( XSD_CONTENT ) );
         assertThat( types, notNullValue() );
         assertThat( types.isEmpty(), is( false ) );
@@ -78,25 +84,35 @@ public class ITModelTypeManager extends BaseIntegrationTest {
     
     @Test
     public void shouldGetSequencerGroups() throws Exception {
-        assertThat( modelTypeManager.sequencerGroups( SEQUENCER_REPOSITORY ).isEmpty(), is( false ) );
+        assertThat( modelTypeManager.sequencerGroups( HTTP_SEQUENCER_REPOSITORY ).isEmpty(), is( false ) );
     }
     
     @Test
     public void shouldIniitializeSequencerRepositories() {
-        assertThat( modelTypeManager.sequencerRepositories().contains( ModelTypeManager.JBOSS_SEQUENCER_REPOSITORY ), is( true ) );
-        assertThat( modelTypeManager.sequencerRepositories().contains( ModelTypeManager.MAVEN_SEQUENCER_REPOSITORY ), is( true ) );
+        assertThat( modelTypeManager.sequencerRepositories().contains( HTTP_SEQUENCER_REPOSITORY ), is( true ) );
     }
     
     @Test
     public void shouldInstallSequencer() throws Exception {
-        final Set< String > potentialSequencerClassNames = modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "java" );
+        final Set< String > potentialSequencerClassNames = modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "java" );
         assertThat( potentialSequencerClassNames.isEmpty(), is( true ) );
         assertThat( modelTypeManager.modelTypes().isEmpty(), is( false ) );
     }
     
     @Test
-    public void shouldReturnUninstantiablePotentialSequencerClassNamesIfInstallingSequencerWithUninstalledDependencies() throws Exception {
-        final Set< String > potentialSequencerClassNames = modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "xsd" );
+    public void shouldOnlyInstallSequencerOnce() throws Exception {
+        modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "java" );
+        assertThat( modelTypeManager.modelTypes().isEmpty(), is( false ) );
+        final int size = modelTypeManager.modelTypes().size();
+        modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "java" );
+        assertThat( modelTypeManager.modelTypes().size(), is( size ) );
+    }
+    
+    @Test
+    public void shouldReturnUninstantiablePotentialSequencerClassNames() throws Exception {
+        Set< String > potentialSequencerClassNames = modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "xsd" );
         assertThat( potentialSequencerClassNames.isEmpty(), is( false ) );
+        potentialSequencerClassNames = modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "sramp" );
+        assertThat( potentialSequencerClassNames.isEmpty(), is( true ) );
     }
 }

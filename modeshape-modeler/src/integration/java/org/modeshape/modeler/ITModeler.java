@@ -59,9 +59,9 @@ public class ITModeler extends BaseIntegrationTest {
     
     @Test
     public void shouldCreateModelOfSuppliedType() throws Exception {
-        modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "xml" );
-        modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "sramp" );
-        modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "xsd" );
+        modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "xml" );
+        modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "sramp" );
+        modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "xsd" );
         final String path = importContent( XSD_CONTENT );
         ModelType modelType = null;
         for ( final ModelType type : modelTypeManager.modelTypes( path ) ) {
@@ -71,20 +71,24 @@ public class ITModeler extends BaseIntegrationTest {
             }
         }
         modeler.createModel( path, modelType );
-        final Session session = session();
-        assertThat( session.getNode( path ).hasNode( XSD_SEQUENCER ), is( true ) );
-        session.logout();
+        manager.run( new Task< Void >() {
+            
+            @Override
+            public Void run( final Session session ) throws Exception {
+                assertThat( session.getNode( path ).hasNode( XSD_SEQUENCER ), is( true ) );
+                return null;
+            }
+        } );
     }
     
     @Test( expected = ModelerException.class )
     public void shouldFailProcessingDependenciesWhenNodeIsNotAModelNode() throws Exception {
-        final Modeler accessModeler = modeler;
         modeler.manager.run( new Task< Void >() {
             
             @Override
             public Void run( final Session session ) throws Exception {
-                final Node rootNode = session().getRootNode();
-                accessModeler.processDependencies( rootNode );
+                final Node rootNode = session.getRootNode();
+                modeler.processDependencies( rootNode );
                 return null;
             }
         } );
@@ -92,26 +96,26 @@ public class ITModeler extends BaseIntegrationTest {
     
     @Test( expected = ModelerException.class )
     public void shouldFailToCreateDefaultModelIfFileIsInvalid() throws Exception {
-        modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "xml" );
+        modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "xml" );
         modeler.createDefaultModel( importContent( XML_CONTENT + "<stuff>" ) );
     }
     
     @Test( expected = ModelerException.class )
     public void shouldFailToCreateModelIfFileIsInvalid() throws Exception {
-        modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "xml" );
+        modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "xml" );
         modeler.createModel( importContent( XML_CONTENT + "<stuff>" ), modelTypeManager.modelTypes().iterator().next() );
     }
     
     @Test( expected = ModelerException.class )
     public void shouldFailToCreateModelIfTypeIsInapplicable() throws Exception {
-        modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "xml" );
+        modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "xml" );
         modeler.createModel( importContent( "stuff" ), modelTypeManager.modelTypes().iterator().next() );
     }
     
     @Test
     public void shouldNotFindDependencyProcessorForXsdModelNode() throws Exception {
-        modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "sramp" );
-        modelTypeManager.installSequencers( SEQUENCER_REPOSITORY, "xsd" );
+        modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "sramp" );
+        modelTypeManager.installSequencers( HTTP_SEQUENCER_REPOSITORY, "xsd" );
         
         // find XSD model type
         ModelType xsdModelType = null;

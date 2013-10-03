@@ -24,16 +24,23 @@
 package org.modeshape.modeler.test;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
-
-import javax.jcr.Session;
+import java.net.URL;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.modeshape.modeler.Modeler;
-import org.modeshape.modeler.ModelerException;
 import org.modeshape.modeler.TestUtil;
+import org.modeshape.modeler.impl.Manager;
 import org.modeshape.modeler.impl.ModelTypeManagerImpl;
 
 /**
@@ -43,26 +50,63 @@ import org.modeshape.modeler.impl.ModelTypeManagerImpl;
 @SuppressWarnings( "javadoc" )
 public abstract class BaseTest {
     
-    protected Modeler modeler;
-    protected ModelTypeManagerImpl modelTypeManager;
+    protected static final String TEST_MODESHAPE_CONFIGURATION_PATH = "testModeShapeConfig.json";
+    protected static final String TEST_REPOSITORY_STORE_PARENT_PATH;
+    protected static final URL SEQUENCER_REPOSITORY;
+    
+    static {
+        try {
+            SEQUENCER_REPOSITORY = new URL( "file:./src/test/resources/" );
+            final Path path = Files.createTempDirectory( null );
+            path.toFile().deleteOnExit();
+            TEST_REPOSITORY_STORE_PARENT_PATH = path.toString();
+        } catch ( final IOException e ) {
+            throw new RuntimeException( e );
+        }
+    }
+    
+    public Modeler modeler;
+    public Manager manager;
+    public ModelTypeManagerImpl modelTypeManager;
     
     @After
     public void after() throws Exception {
-        modeler.stop();
+        modeler.close();
+        deleteFolder( TEST_REPOSITORY_STORE_PARENT_PATH + "/modelerRepository" );
+        deleteFolder( System.getProperty( "java.io.tmpdir" ) + "/modeshape-binary-store" );
     }
     
     @Before
-    public void before() {
-        modeler = new Modeler();
+    public void before() throws Exception {
+        modeler = new Modeler( TEST_MODESHAPE_CONFIGURATION_PATH, TEST_REPOSITORY_STORE_PARENT_PATH );
+        manager = TestUtil.manager( modeler );
         modelTypeManager = ( ModelTypeManagerImpl ) modeler.modelTypeManager();
+    }
+    
+    private void deleteFolder( final String folder ) throws Exception {
+        final File file = new File( folder );
+        if ( file.exists() )
+            Files.walkFileTree( FileSystems.getDefault().getPath( file.toString() ), new SimpleFileVisitor< Path >() {
+                
+                @Override
+                public FileVisitResult postVisitDirectory( final Path folder,
+                                                           final IOException e ) throws IOException {
+                    if ( e != null ) throw e;
+                    Files.delete( folder );
+                    return FileVisitResult.CONTINUE;
+                }
+                
+                @Override
+                public FileVisitResult visitFile( final Path file,
+                                                  final BasicFileAttributes attrs ) throws IOException {
+                    Files.delete( file );
+                    return FileVisitResult.CONTINUE;
+                }
+            } );
     }
     
     protected String importContent( final String content ) throws Exception {
         return modeler.importContent( "stuff", new ByteArrayInputStream( content.getBytes() ), null );
-    }
-    
-    protected Session session() throws ModelerException {
-        return TestUtil.session( modeler );
     }
     
     protected InputStream stream( final String content ) {

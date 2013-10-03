@@ -45,24 +45,51 @@ import org.polyglotter.common.Logger;
 /**
  * 
  */
-public final class Modeler {
+public final class Modeler implements AutoCloseable {
+    
+    /**
+     * 
+     */
+    public static final String DEFAULT_MODESHAPE_CONFIGURATION_PATH = "jcr/modeShapeConfig.json";
     
     final Manager manager;
     
     /**
      * Uses a default ModeShape configuration.
+     * 
+     * @param repositoryStoreParentPath
+     *        the path to the folder that should contain the ModeShape repository store
+     * @throws ModelerException
+     *         if any error occurs
      */
-    public Modeler() {
-        manager = new Manager();
+    public Modeler( final String repositoryStoreParentPath ) throws ModelerException {
+        this( DEFAULT_MODESHAPE_CONFIGURATION_PATH, repositoryStoreParentPath );
     }
     
     /**
-     * 
      * @param modeShapeConfigurationPath
      *        the path to a ModeShape configuration file
+     * @param repositoryStoreParentPath
+     *        the path to the folder that should contain the ModeShape repository store
+     * @throws ModelerException
+     *         if any error occurs
      */
-    public Modeler( final String modeShapeConfigurationPath ) {
-        manager = new Manager( modeShapeConfigurationPath );
+    public Modeler( final String modeShapeConfigurationPath,
+                    final String repositoryStoreParentPath ) throws ModelerException {
+        CheckArg.isNotEmpty( modeShapeConfigurationPath, "modeShapeConfigurationPath" );
+        manager = new Manager( modeShapeConfigurationPath, repositoryStoreParentPath );
+    }
+    
+    /**
+     * {@inheritDoc}
+     * 
+     * @throws ModelerException
+     *         if any problem occurs
+     * @see java.lang.AutoCloseable#close()
+     */
+    @Override
+    public void close() throws ModelerException {
+        manager.close();
     }
     
     /**
@@ -95,8 +122,8 @@ public final class Modeler {
                 ModelType type = modelType;
                 if ( modelType == null ) {
                     // If no model type supplied, use default model type if one exists
-                    type = manager.modelTypeManager().defaultModelType( contentNode,
-                                                                        manager.modelTypeManager().modelTypes( contentNode ) );
+                    type = manager.modelTypeManager.defaultModelType( contentNode,
+                                                                      manager.modelTypeManager.modelTypes( contentNode ) );
                     if ( type == null )
                         throw new IllegalArgumentException( ModelerI18n.unableToDetermineDefaultModelType.text( artifactPath ) );
                 }
@@ -191,7 +218,14 @@ public final class Modeler {
      * @return the model type manager
      */
     public ModelTypeManager modelTypeManager() {
-        return manager.modelTypeManager();
+        return manager.modelTypeManager;
+    }
+    
+    /**
+     * @return the path to the configuration for the embedded ModeShape repository supplied when this Modeler was instantiated.
+     */
+    public String modeShapeConfigurationPath() {
+        return manager.modeShapeConfigurationPath;
     }
     
     /**
@@ -207,7 +241,7 @@ public final class Modeler {
             
             @Override
             public String run( final Session session ) throws Exception {
-                final DependencyProcessor dependencyProcessor = manager.modelTypeManager().dependencyProcessor( modelNode );
+                final DependencyProcessor dependencyProcessor = manager.modelTypeManager.dependencyProcessor( modelNode );
                 
                 if ( dependencyProcessor == null ) {
                     Logger.getLogger( getClass() ).debug( "No dependency processor found for model '" + modelNode.getName() + '\'' );
@@ -220,10 +254,9 @@ public final class Modeler {
     }
     
     /**
-     * @throws ModelerException
-     *         if any problem occurs
+     * @return the path to the folder that should contain the ModeShape repository store
      */
-    public void stop() throws ModelerException {
-        manager.stop();
+    public String repositoryStoreParentPath() {
+        return System.getProperty( Manager.REPOSITORY_STORE_PARENT_PATH_PROPERTY );
     }
 }

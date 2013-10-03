@@ -1,14 +1,15 @@
 {
     "name" : "ModeShape Modeler Repository",
     "workspaces" : {
-        "predefined" : ["otherWorkspace"],
-        "default" : "default",
-        "allowCreation" : true
+        "predefined" : ["modeler"],
+        "default" : "default"
     },
-    "security" : {
-        "anonymous" : {
-            "roles" : ["readonly","readwrite","admin"],
-            "useOnFailedLogin" : false
+    "storage" : {
+        "cacheName" : "ModeShapeModelerRepository",
+        "cacheConfiguration" : "jcr/infinispan.xml",
+        "binaryStorage" : {
+            "type" : "file",
+            "directory" : "${org.modeshape.modeler.repositoryStoreParentPath}/modelerRepository/binaries"
         }
     },
     "node-types" : ["jcr/metamodel.cnd"]
