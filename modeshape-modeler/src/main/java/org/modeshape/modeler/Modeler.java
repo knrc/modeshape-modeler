@@ -185,11 +185,11 @@ public final class Modeler implements AutoCloseable {
                 // Ensure the path is non-null, ending with a slash
                 String path = workspaceParentPath == null ? "/" : workspaceParentPath;
                 if ( !path.endsWith( "/" ) ) path += '/';
-                final Node fileNode = new JcrTools().uploadFile( session, path + name, stream );
+                final Node node = new JcrTools().uploadFile( session, path + name, stream );
                 // Add unstructured mix-in to allow node to contain anything else, like models created later
-                fileNode.addMixin( Manager.UNSTRUCTURED_MIXIN );
+                node.addMixin( Manager.UNSTRUCTURED_MIXIN );
                 session.save();
-                return fileNode.getPath();
+                return node.getPath();
             }
         } );
     }

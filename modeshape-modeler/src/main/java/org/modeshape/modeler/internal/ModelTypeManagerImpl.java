@@ -30,6 +30,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -38,12 +39,15 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.Property;
+import javax.jcr.PropertyIterator;
 import javax.jcr.Repository;
 import javax.jcr.Session;
 import javax.jcr.Value;
@@ -75,22 +79,23 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
     private static final String MODEL_TYPES = "modelTypes";
     private static final String CATEGORY = "category";
     private static final String SEQUENCER_CLASS = "sequencerClass";
-    private static final String POTENTIAL_SEQUENCER_CLASS_NAMES = "potentialSequencerClassNames";
+    private static final String POTENTIAL_SEQUENCER_CLASS_NAMES = "potentialSequencerClassNamesByCategory";
     
     static final Logger LOGGER = Logger.getLogger( ModelTypeManagerImpl.class );
     
     /**
      * 
      */
-    public static final String MODESHAPE_GROUP = "/org/modeshape/";
+    public static final String MODESHAPE_GROUP = "org/modeshape";
     
     static final URL[] EMPTY_URLS = new URL[ 0 ];
     
     final Manager manager;
+    
     final LinkedList< URL > modelTypeRepositories = new LinkedList<>();
     final Set< ModelType > modelTypes = new HashSet<>();
     final LibraryClassLoader libraryClassLoader = new LibraryClassLoader();
-    final Set< String > potentialSequencerClassNames = new HashSet<>();
+    final Map< String, String > potentialSequencerClassNamesByCategory = new HashMap<>();
     final Path library;
     final Map< String, DependencyProcessor > dependencyProcessorsByModelTypeName = new HashMap< String, DependencyProcessor >();
     
@@ -147,15 +152,21 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                                                        libraryClassLoader.loadClass( node.getProperty( SEQUENCER_CLASS ).getString() ) ) );
                 }
                 // Load potential sequencer class names
-                if ( !systemNode.hasProperty( POTENTIAL_SEQUENCER_CLASS_NAMES ) ) {
-                    systemNode.setProperty( POTENTIAL_SEQUENCER_CLASS_NAMES, new Value[ 0 ] );
+                if ( !systemNode.hasNode( POTENTIAL_SEQUENCER_CLASS_NAMES ) ) {
+                    systemNode.addNode( POTENTIAL_SEQUENCER_CLASS_NAMES );
                     session.save();
                 }
-                for ( final Value val : systemNode.getProperty( POTENTIAL_SEQUENCER_CLASS_NAMES ).getValues() )
-                    potentialSequencerClassNames.add( val.getString() );
+                for ( final PropertyIterator iter = systemNode.getNode( POTENTIAL_SEQUENCER_CLASS_NAMES ).getProperties(); iter.hasNext(); ) {
+                    final Property prop = iter.nextProperty();
+                    if ( prop.getName().indexOf( ':' ) < 0 ) potentialSequencerClassNamesByCategory.put( prop.getString(), prop.getName() );
+                }
                 return null;
             }
         } );
+    }
+    
+    String archiveName( final String category ) {
+        return "modeshape-sequencer-" + category + "-" + version() + "-module-with-dependencies.zip";
     }
     
     /**
@@ -230,12 +241,11 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
      * @see org.modeshape.modeler.ModelTypeManager#install(java.lang.String)
      */
     @Override
-    public Set< String > install( final String category ) throws ModelerException {
+    public Collection< String > install( final String category ) throws ModelerException {
         CheckArg.isNotEmpty( category, "category" );
         LOGGER.debug( "Installing model types from category %s", category );
         try {
-            final String version = manager.repository.getDescriptor( Repository.REP_VERSION_DESC );
-            final String archiveName = "modeshape-sequencer-" + category + "-" + version + "-module-with-dependencies.zip";
+            final String archiveName = archiveName( category );
             // Return if archive has already been installed
             if ( manager.run( this, new SystemTask< Boolean >() {
                 
@@ -250,11 +260,12 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                             }
                     return false;
                 }
-            } ) ) return Collections.unmodifiableSet( potentialSequencerClassNames );
+            } ) ) return Collections.unmodifiableCollection( potentialSequencerClassNamesByCategory.values() );
             final Path archivePath = library.resolve( archiveName );
-            final String sequencerArchivePath = "modeshape-sequencer-" + category + '/' + version + '/' + archiveName;
+            final String sequencerArchivePath =
+                MODESHAPE_GROUP + "/modeshape-sequencer-" + category + '/' + version() + '/' + archiveName;
             for ( final URL repositoryUrl : modelTypeRepositories ) {
-                final URL url = new URL( repositoryUrl + sequencerArchivePath );
+                final URL url = new URL( path( repositoryUrl.toString(), sequencerArchivePath ) );
                 InputStream urlStream = null;
                 IOException err = null;
                 try {
@@ -293,9 +304,13 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                             public Void run( final Session session,
                                              final Node systemNode ) throws Exception {
                                 try ( InputStream stream = archive.getInputStream( archiveEntry ) ) {
-                                    new JcrTools().uploadFile( session,
-                                                               systemNode.getPath() + '/' + JARS + '/' + jarPath.getFileName().toString(),
-                                                               stream );
+                                    final Node node =
+                                        new JcrTools().uploadFile( session,
+                                                                   systemNode.getPath() + '/' + JARS + '/'
+                                                                                   + jarPath.getFileName().toString(),
+                                                                   stream );
+                                    node.addMixin( Manager.UNSTRUCTURED_MIXIN );
+                                    node.setProperty( CATEGORY, category );
                                     session.save();
                                 }
                                 return null;
@@ -313,14 +328,15 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                                 if ( jarEntry.isDirectory() ) continue;
                                 name = jarEntry.getName();
                                 if ( jarPath.getFileName().toString().contains( "sequencer" ) && name.endsWith( "Sequencer.class" ) ) {
-                                    potentialSequencerClassNames.add( name.replace( '/', '.' )
-                                                                          .substring( 0, name.length() - ".class".length() ) );
+                                    potentialSequencerClassNamesByCategory.put( category, name.replace( '/', '.' )
+                                                                                              .substring( 0,
+                                                                                                          name.length() - ".class".length() ) );
                                     LOGGER.debug( "Potential sequencer: %s", name );
                                 }
                             }
                         }
                     }
-                    for ( final Iterator< String > iter = potentialSequencerClassNames.iterator(); iter.hasNext(); )
+                    for ( final Iterator< String > iter = potentialSequencerClassNamesByCategory.values().iterator(); iter.hasNext(); )
                         try {
                             final Class< ? > sequencerClass = libraryClassLoader.loadClass( iter.next() );
                             if ( Sequencer.class.isAssignableFrom( sequencerClass )
@@ -338,7 +354,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                                                      final Node systemNode ) throws Exception {
                                         final Node node = systemNode.getNode( MODEL_TYPES ).addNode( type.name() );
                                         node.setProperty( SEQUENCER_CLASS, sequencerClass.getName() );
-                                        node.setProperty( CATEGORY, type.category() );
+                                        node.setProperty( CATEGORY, category );
                                         session.save();
                                         return null;
                                     }
@@ -356,22 +372,21 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                     public Void run( final Session session,
                                      final Node systemNode ) throws Exception {
                         // Save that archive has been installed
-                        Value[] vals = systemNode.hasProperty( ZIPS ) ? systemNode.getProperty( ZIPS ).getValues() : new Value[ 0 ];
+                        final Value[] vals =
+                            systemNode.hasProperty( ZIPS ) ? systemNode.getProperty( ZIPS ).getValues() : new Value[ 0 ];
                         final Value[] newVals = new Value[ vals.length + 1 ];
                         System.arraycopy( vals, 0, newVals, 0, vals.length );
                         newVals[ vals.length ] = session.getValueFactory().createValue( archiveName );
                         systemNode.setProperty( ZIPS, newVals );
                         // Save potential class names
-                        vals = new Value[ potentialSequencerClassNames.size() ];
-                        int ndx = 0;
-                        for ( final String name : potentialSequencerClassNames )
-                            vals[ ndx++ ] = session.getValueFactory().createValue( name );
-                        systemNode.setProperty( POTENTIAL_SEQUENCER_CLASS_NAMES, vals );
+                        final Node node = systemNode.getNode( POTENTIAL_SEQUENCER_CLASS_NAMES );
+                        for ( final Entry< String, String > entry : potentialSequencerClassNamesByCategory.entrySet() )
+                            if ( entry.getKey().indexOf( ':' ) < 0 ) node.setProperty( entry.getValue(), entry.getKey() );
                         session.save();
                         return null;
                     }
                 } );
-                return Collections.unmodifiableSet( potentialSequencerClassNames );
+                return Collections.unmodifiableCollection( potentialSequencerClassNamesByCategory.values() );
             }
         } catch ( final IOException e ) {
             throw new ModelerException( e );
@@ -389,7 +404,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
         final Set< String > categories = new HashSet<>();
         for ( final URL repositoryUrl : modelTypeRepositories ) {
             try {
-                final Document doc = Jsoup.connect( repositoryUrl.toString() ).get();
+                final Document doc = Jsoup.connect( path( repositoryUrl.toString(), MODESHAPE_GROUP ) ).get();
                 final Elements elements = doc.getElementsMatchingOwnText( "sequencer-" );
                 for ( final Element element : elements ) {
                     final String href = element.attr( "href" );
@@ -486,6 +501,45 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
     /**
      * {@inheritDoc}
      * 
+     * @see org.modeshape.modeler.ModelTypeManager#moveModelTypeRepositoryDown(java.net.URL)
+     */
+    @Override
+    public List< URL > moveModelTypeRepositoryDown( final URL repositoryUrl ) throws ModelerException {
+        CheckArg.isNotNull( repositoryUrl, "repositoryUrl" );
+        final int ndx = modelTypeRepositories.indexOf( repositoryUrl );
+        if ( ndx < 0 ) throw new IllegalArgumentException( ModelerI18n.urlNotFound.text( repositoryUrl ) );
+        modelTypeRepositories.remove( ndx );
+        modelTypeRepositories.add( Math.min( ndx + 1, modelTypeRepositories.size() ), repositoryUrl );
+        saveModelTypeRepositories();
+        return modelTypeRepositories();
+    }
+    
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.modeler.ModelTypeManager#moveModelTypeRepositoryUp(java.net.URL)
+     */
+    @Override
+    public List< URL > moveModelTypeRepositoryUp( final URL repositoryUrl ) throws ModelerException {
+        CheckArg.isNotNull( repositoryUrl, "repositoryUrl" );
+        final int ndx = modelTypeRepositories.indexOf( repositoryUrl );
+        if ( ndx < 0 ) throw new IllegalArgumentException( ModelerI18n.urlNotFound.text( repositoryUrl ) );
+        modelTypeRepositories.remove( ndx );
+        modelTypeRepositories.add( Math.max( ndx - 1, 0 ), repositoryUrl );
+        saveModelTypeRepositories();
+        return modelTypeRepositories();
+    }
+    
+    private String path( final String prefix,
+                         final String suffix ) {
+        if ( prefix.charAt( prefix.length() - 1 ) == '/' )
+            return suffix.charAt( 0 ) == '/' ? prefix + suffix.substring( 1 ) : prefix + suffix;
+        return suffix.charAt( 0 ) == '/' ? prefix + suffix : prefix + '/' + suffix;
+    }
+    
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.modeshape.modeler.ModelTypeManager#registerModelTypeRepository(java.net.URL)
      */
     @Override
@@ -493,22 +547,71 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
         CheckArg.isNotNull( repositoryUrl, "repositoryUrl" );
         if ( !modelTypeRepositories.contains( repositoryUrl ) ) {
             modelTypeRepositories.addFirst( repositoryUrl );
-            manager.run( this, new SystemTask< Void >() {
-                
-                @Override
-                public Void run( final Session session,
-                                 final Node systemNode ) throws Exception {
-                    final Value[] vals = systemNode.getProperty( MODEL_TYPE_REPOSITORIES ).getValues();
-                    final Value[] newVals = new Value[ vals.length + 1 ];
-                    System.arraycopy( vals, 0, newVals, 0, vals.length );
-                    newVals[ vals.length ] = session.getValueFactory().createValue( repositoryUrl.toString() );
-                    systemNode.setProperty( MODEL_TYPE_REPOSITORIES, newVals );
-                    session.save();
-                    return null;
-                }
-            } );
+            saveModelTypeRepositories();
         }
-        return modelTypeRepositories;
+        return modelTypeRepositories();
+    }
+    
+    private void saveModelTypeRepositories() throws ModelerException {
+        manager.run( this, new SystemTask< Void >() {
+            
+            @Override
+            public Void run( final Session session,
+                             final Node systemNode ) throws Exception {
+                final Value[] vals = new Value[ modelTypeRepositories.size() ];
+                int ndx = 0;
+                for ( final URL url : modelTypeRepositories )
+                    vals[ ndx++ ] = session.getValueFactory().createValue( url.toString() );
+                systemNode.setProperty( MODEL_TYPE_REPOSITORIES, vals );
+                session.save();
+                return null;
+            }
+        } );
+    }
+    
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.modeler.ModelTypeManager#uninstall(java.lang.String)
+     */
+    @Override
+    public void uninstall( final String category ) throws ModelerException {
+        CheckArg.isNotEmpty( category, "category" );
+        for ( final Iterator< ModelType > iter = modelTypes.iterator(); iter.hasNext(); )
+            if ( category.equals( iter.next().category() ) ) iter.remove();
+        manager.run( this, new SystemTask< Void >() {
+            
+            @Override
+            public Void run( final Session session,
+                             final Node systemNode ) throws Exception {
+                Property prop = systemNode.getProperty( ZIPS );
+                final Value[] vals = prop.getValues();
+                final Value[] newVals = new Value[ vals.length - 1 ];
+                boolean found = false;
+                int newNdx = 0;
+                final String archiveName = archiveName( category );
+                for ( final Value val : vals )
+                    if ( val.getString().equals( archiveName ) )
+                        found = true;
+                    else if ( newVals.length > 0 ) newVals[ Math.min( newNdx++, newVals.length ) ] = val;
+                if ( !found ) return null;
+                prop.setValue( newVals );
+                for ( final NodeIterator iter = systemNode.getNode( JARS ).getNodes(); iter.hasNext(); ) {
+                    final Node node = iter.nextNode();
+                    if ( !node.getProperty( CATEGORY ).equals( category ) ) continue;
+                    final Path jarPath = library.resolve( node.getName() );
+                    if ( jarPath.toFile().delete() ) LOGGER.debug( "Unable to delete jar: %s", jarPath );
+                    node.remove();
+                    LOGGER.debug( "Uninstalled jar: %s", jarPath );
+                }
+                for ( final PropertyIterator iter = systemNode.getNode( POTENTIAL_SEQUENCER_CLASS_NAMES ).getProperties(); iter.hasNext(); ) {
+                    prop = iter.nextProperty();
+                    if ( prop.getString().equals( category ) ) prop.remove();
+                }
+                session.save();
+                return null;
+            }
+        } );
     }
     
     /**
@@ -522,23 +625,12 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
     @Override
     public List< URL > unregisterModelTypeRepository( final URL repositoryUrl ) throws ModelerException {
         CheckArg.isNotNull( repositoryUrl, "repositoryUrl" );
-        if ( modelTypeRepositories.remove( repositoryUrl ) )
-            manager.run( this, new SystemTask< Void >() {
-                
-                @Override
-                public Void run( final Session session,
-                                 final Node systemNode ) throws Exception {
-                    final Value[] vals = systemNode.getProperty( MODEL_TYPE_REPOSITORIES ).getValues();
-                    final Value[] newVals = new Value[ vals.length - 1 ];
-                    final String url = repositoryUrl.toString();
-                    for ( int ndx = 0, newNdx = 0; ndx < vals.length; ++ndx )
-                        if ( !vals[ ndx ].getString().equals( url ) ) newVals[ newNdx++ ] = vals[ ndx ];
-                    systemNode.setProperty( MODEL_TYPE_REPOSITORIES, newVals );
-                    session.save();
-                    return null;
-                }
-            } );
-        return modelTypeRepositories;
+        if ( modelTypeRepositories.remove( repositoryUrl ) ) saveModelTypeRepositories();
+        return modelTypeRepositories();
+    }
+    
+    private String version() {
+        return manager.repository.getDescriptor( Repository.REP_VERSION_DESC );
     }
     
     class LibraryClassLoader extends URLClassLoader {

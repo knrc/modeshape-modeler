@@ -30,6 +30,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 
 import java.net.URL;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -40,6 +41,7 @@ import javax.jcr.Value;
 
 import org.junit.Test;
 import org.modeshape.modeler.ModelType;
+import org.modeshape.modeler.ModelTypeManager;
 import org.modeshape.modeler.Modeler;
 import org.modeshape.modeler.TestUtil;
 import org.modeshape.modeler.test.BaseTest;
@@ -93,8 +95,38 @@ public class ModelTypeManagerImplTest extends BaseTest {
     }
     
     @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToMoveModelTypeRepositoryDownIfUrlNotFound() throws Exception {
+        modelTypeManager.moveModelTypeRepositoryDown( MODEL_TYPE_REPOSITORY );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToMoveModelTypeRepositoryDownIfUrlNull() throws Exception {
+        modelTypeManager.moveModelTypeRepositoryDown( null );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToMoveModelTypeRepositoryUpIfUrlNotFound() throws Exception {
+        modelTypeManager.moveModelTypeRepositoryUp( MODEL_TYPE_REPOSITORY );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToMoveModelTypeRepositoryUpIfUrlNull() throws Exception {
+        modelTypeManager.moveModelTypeRepositoryUp( null );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
     public void shouldFailToRegisterModelTypeRepositoryIfUrlIsNull() throws Exception {
         modelTypeManager.registerModelTypeRepository( null );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToUninstallIfCategoryEmpty() throws Exception {
+        modelTypeManager.uninstall( " " );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToUninstallIfCategoryNull() throws Exception {
+        modelTypeManager.uninstall( null );
     }
     
     @Test( expected = IllegalArgumentException.class )
@@ -148,7 +180,7 @@ public class ModelTypeManagerImplTest extends BaseTest {
     @Test
     public void shouldInstallModelTypes() throws Exception {
         modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
-        final Set< String > potentialSequencerClassNames = modelTypeManager.install( "java" );
+        final Collection< String > potentialSequencerClassNames = modelTypeManager.install( "java" );
         assertThat( potentialSequencerClassNames.isEmpty(), is( true ) );
         assertThat( modelTypeManager.modelTypes().isEmpty(), is( false ) );
         final ModelTypeImpl type = ( ModelTypeImpl ) modelTypeManager.modelTypes().iterator().next();
@@ -172,7 +204,7 @@ public class ModelTypeManagerImplTest extends BaseTest {
             assertThat( modelTypeManager.modelTypeRepositories().size(), not( repos ) );
             assertThat( modelTypeManager.modelTypes().isEmpty(), is( false ) );
             assertThat( modelTypeManager.libraryClassLoader.getURLs().length > 0, is( true ) );
-            assertThat( modelTypeManager.potentialSequencerClassNames.isEmpty(), is( false ) );
+            assertThat( modelTypeManager.potentialSequencerClassNamesByCategory.isEmpty(), is( false ) );
             TestUtil.manager( modeler ).run( modelTypeManager, new SystemTask< Void >() {
                 
                 @Override
@@ -183,6 +215,26 @@ public class ModelTypeManagerImplTest extends BaseTest {
                 }
             } );
         }
+    }
+    
+    @Test
+    public void shouldMoveModelTypeRepositoryDown() throws Exception {
+        final URL url = new URL( ModelTypeManager.JBOSS_MODEL_TYPE_REPOSITORY );
+        final int size = modelTypeManager.modelTypeRepositories().size();
+        assertThat( modelTypeManager.modelTypeRepositories().indexOf( url ), is( 0 ) );
+        modelTypeManager.moveModelTypeRepositoryDown( url );
+        assertThat( modelTypeManager.modelTypeRepositories().indexOf( url ), is( 1 ) );
+        assertThat( modelTypeManager.modelTypeRepositories().size(), is( size ) );
+    }
+    
+    @Test
+    public void shouldMoveModelTypeRepositoryUp() throws Exception {
+        final URL url = new URL( ModelTypeManager.MAVEN_MODEL_TYPE_REPOSITORY );
+        final int size = modelTypeManager.modelTypeRepositories().size();
+        assertThat( modelTypeManager.modelTypeRepositories().indexOf( url ), is( 1 ) );
+        modelTypeManager.moveModelTypeRepositoryUp( url );
+        assertThat( modelTypeManager.modelTypeRepositories().indexOf( url ), is( 0 ) );
+        assertThat( modelTypeManager.modelTypeRepositories().size(), is( size ) );
     }
     
     @Test
@@ -206,6 +258,23 @@ public class ModelTypeManagerImplTest extends BaseTest {
     }
     
     @Test
+    public void shouldNotMoveModelTypeRepositoryDownIfUrlLast() throws Exception {
+        final List< URL > urls = modelTypeManager.modelTypeRepositories();
+        final URL url = new URL( ModelTypeManager.MAVEN_MODEL_TYPE_REPOSITORY );
+        modelTypeManager.moveModelTypeRepositoryDown( url );
+        assertThat( modelTypeManager.modelTypeRepositories().indexOf( url ), is( 1 ) );
+        assertThat( modelTypeManager.modelTypeRepositories().equals( urls ), is( true ) );
+    }
+    
+    @Test
+    public void shouldNotMoveModelTypeRepositoryUpIfUrlFirst() throws Exception {
+        final List< URL > urls = modelTypeManager.modelTypeRepositories();
+        final URL url = new URL( ModelTypeManager.JBOSS_MODEL_TYPE_REPOSITORY );
+        modelTypeManager.moveModelTypeRepositoryUp( url );
+        assertThat( modelTypeManager.modelTypeRepositories().equals( urls ), is( true ) );
+    }
+    
+    @Test
     public void shouldNotReturnNullModelTypeCategories() {
         assertThat( modelTypeManager.modelTypeCategories(), notNullValue() );
         assertThat( modelTypeManager.modelTypeCategories().isEmpty(), is( true ) );
@@ -220,11 +289,28 @@ public class ModelTypeManagerImplTest extends BaseTest {
     @Test
     public void shouldRegisterModelTypeRepository() throws Exception {
         final int size = modelTypeManager.modelTypeRepositories().size();
-        final URL repo = new URL( "file:" );
-        final List< URL > repos = modelTypeManager.registerModelTypeRepository( repo );
+        final List< URL > repos = modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         assertThat( repos, notNullValue() );
         assertThat( repos.size(), is( size + 1 ) );
-        assertThat( repos.contains( repo ), is( true ) );
+        assertThat( repos.contains( MODEL_TYPE_REPOSITORY ), is( true ) );
+    }
+    
+    @Test
+    public void shouldUninstall() throws Exception {
+        modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
+        modelTypeManager.install( "java" );
+        assertThat( modelTypeManager.modelTypes().isEmpty(), is( false ) );
+        modelTypeManager.uninstall( "java" );
+        assertThat( modelTypeManager.modelTypes().isEmpty(), is( true ) );
+        manager.run( modelTypeManager, new SystemTask< Void >() {
+            
+            @Override
+            public Void run( final Session session,
+                             final Node systemNode ) throws Exception {
+                assertThat( systemNode.getProperty( ModelTypeManagerImpl.ZIPS ).getValues().length, is( 0 ) );
+                return null;
+            }
+        } );
     }
     
     @Test

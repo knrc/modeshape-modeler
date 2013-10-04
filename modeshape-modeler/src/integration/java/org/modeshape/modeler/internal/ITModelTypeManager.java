@@ -29,6 +29,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 
 import java.net.URL;
+import java.util.Collection;
 import java.util.Set;
 
 import javax.jcr.Node;
@@ -97,7 +98,7 @@ public class ITModelTypeManager extends BaseIntegrationTest {
     
     @Test
     public void shouldInstallModelTypes() throws Exception {
-        final Set< String > potentialSequencerClassNames = modelTypeManager.install( "java" );
+        final Collection< String > potentialSequencerClassNames = modelTypeManager.install( "java" );
         assertThat( potentialSequencerClassNames.isEmpty(), is( true ) );
         assertThat( modelTypeManager.modelTypes().isEmpty(), is( false ) );
     }
@@ -113,7 +114,7 @@ public class ITModelTypeManager extends BaseIntegrationTest {
     
     @Test
     public void shouldReturnUninstantiablePotentialSequencerClassNames() throws Exception {
-        Set< String > potentialSequencerClassNames = modelTypeManager.install( "xsd" );
+        Collection< String > potentialSequencerClassNames = modelTypeManager.install( "xsd" );
         assertThat( potentialSequencerClassNames.isEmpty(), is( false ) );
         potentialSequencerClassNames = modelTypeManager.install( "sramp" );
         assertThat( potentialSequencerClassNames.isEmpty(), is( true ) );
