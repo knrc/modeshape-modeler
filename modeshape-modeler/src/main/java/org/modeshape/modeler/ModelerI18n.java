@@ -31,11 +31,13 @@ import org.polyglotter.common.I18n;
 @SuppressWarnings( "javadoc" )
 public final class ModelerI18n {
     
-    public static I18n fileNotFound = new I18n( "File not found: %s" );
-    public static I18n modelerStarted = new I18n( "ModeShape Modeler started" );
-    public static I18n modelerStopped = new I18n( "ModeShape Modeler stopped" );
-    public static I18n mustBeModelNode = new I18n( "Node '%s' is not a model node" );
-    public static I18n sessionNotSavedWhenCreatingModel = new I18n( "The session was not saved when creating model for '%s'" );
-    public static I18n unableToDetermineDefaultModelType = new I18n( "Unable to determine default model type for file %s" );
-    public static I18n unableToFindModelTypeCategory = new I18n( "Unable to find model type category \"%s\" in registered model type repositories" );
+    public static final I18n fileNotFound = new I18n( "File not found: %s" );
+    public static final I18n modelerStarted = new I18n( "ModeShape Modeler started" );
+    public static final I18n modelerStopped = new I18n( "ModeShape Modeler stopped" );
+    public static final I18n mustBeModelNode = new I18n( "Node '%s' is not a model node" );
+    public static final I18n sessionNotSavedWhenCreatingModel = new I18n( "The session was not saved when creating model for '%s'" );
+    public static final I18n unableToDetermineDefaultModelType = new I18n( "Unable to determine default model type for file %s" );
+    public static final I18n unableToFindModelTypeCategory =
+        new I18n( "Unable to find model type category \"%s\" in registered model type repositories" );
+    public static final I18n urlNotFound = new I18n( "URL not found: %s" );
 }
