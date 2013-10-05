@@ -87,12 +87,12 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
      * 
      */
     public static final String MODESHAPE_GROUP = "org/modeshape";
-    
     static final URL[] EMPTY_URLS = new URL[ 0 ];
     
     final Manager manager;
     
     final LinkedList< URL > modelTypeRepositories = new LinkedList<>();
+    
     final Set< ModelType > modelTypes = new HashSet<>();
     final LibraryClassLoader libraryClassLoader = new LibraryClassLoader();
     final Map< String, String > potentialSequencerClassNamesByCategory = new HashMap<>();
@@ -415,6 +415,19 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
             }
         }
         return categories;
+    }
+    
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.modeler.ModelTypeManager#modelType(java.lang.String)
+     */
+    @Override
+    public ModelType modelType( final String name ) {
+        CheckArg.isNotEmpty( name, "name" );
+        for ( final ModelType type : modelTypes )
+            if ( name.equals( type.name() ) ) return type;
+        return null;
     }
     
     /**

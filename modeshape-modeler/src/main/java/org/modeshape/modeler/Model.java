@@ -21,9 +21,17 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.modeshape.modeler.integration;
+package org.modeshape.modeler;
 
-import org.modeshape.modeler.test.BaseTest;
-
-@SuppressWarnings( "javadoc" )
-public abstract class BaseIntegrationTest extends BaseTest {}
+/**
+ * 
+ */
+public interface Model extends ModelObject {
+    
+    /**
+     * @return this model's type; never <code>null</code>.
+     * @throws ModelerException
+     *         if any error occurs
+     */
+    ModelType modelType() throws ModelerException;
+}
