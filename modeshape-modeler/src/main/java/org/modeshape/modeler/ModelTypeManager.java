@@ -72,6 +72,13 @@ public interface ModelTypeManager {
     Set< String > installableModelTypeCategories() throws ModelerException;
     
     /**
+     * @param name
+     *        a name of a model type
+     * @return the model type with the supplied name, or <code>null</code> if none exists.
+     */
+    ModelType modelType( String name );
+    
+    /**
      * @return the installed model type categories; never <code>null</code>.
      */
     Set< String > modelTypeCategories();

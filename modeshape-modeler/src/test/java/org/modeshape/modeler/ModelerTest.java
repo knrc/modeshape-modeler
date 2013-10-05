@@ -37,11 +37,17 @@ import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.modeler.internal.Task;
 import org.modeshape.modeler.test.BaseTest;
 
-/**
- * Tests for {@link Modeler}.
- */
 @SuppressWarnings( "javadoc" )
 public final class ModelerTest extends BaseTest {
+    
+    @Test
+    public void shouldCreateModel() throws Exception {
+        modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
+        modelTypeManager.install( "xml" );
+        final String path = modeler.importArtifact( "stuff", stream( XML_ARTIFACT ), null );
+        final Model model = modeler.createModel( path, modelTypeManager.modelType( XML_MODEL_TYPE_NAME ) );
+        assertThat( model, notNullValue() );
+    }
     
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToCreateDefaultModelIfPathIsEmpty() throws Exception {

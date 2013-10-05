@@ -56,7 +56,7 @@ public class ModelTypeManagerImplTest extends BaseTest {
     
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetApplicableModelTypesIfPathIsNull() throws Exception {
-        modelTypeManager.modelTypesForArtifact( ( String ) null );
+        modelTypeManager.modelTypesForArtifact( null );
     }
     
     @Test( expected = IllegalArgumentException.class )
@@ -67,6 +67,16 @@ public class ModelTypeManagerImplTest extends BaseTest {
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToGetDefaultModelTypeIfPathIsNull() throws Exception {
         modelTypeManager.defaultModelType( null );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToGetModelTypeIfNameIsEmpty() {
+        modelTypeManager.modelType( " " );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToGetModelTypeIfNameIsNull() {
+        modelTypeManager.modelType( null );
     }
     
     @Test( expected = IllegalArgumentException.class )
@@ -165,6 +175,13 @@ public class ModelTypeManagerImplTest extends BaseTest {
     }
     
     @Test
+    public void shouldGetModelType() throws Exception {
+        modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
+        modelTypeManager.install( "xml" );
+        assertThat( modelTypeManager.modelType( XML_MODEL_TYPE_NAME ), notNullValue() );
+    }
+    
+    @Test
     public void shouldGetModelTypeCategories() throws Exception {
         modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         modelTypeManager.install( "java" );
@@ -192,14 +209,14 @@ public class ModelTypeManagerImplTest extends BaseTest {
     public void shouldLoadState() throws Exception {
         modeler.close();
         int repos;
-        try ( Modeler modeler = new Modeler( Modeler.DEFAULT_MODESHAPE_CONFIGURATION_PATH, TEST_REPOSITORY_STORE_PARENT_PATH ) ) {
+        try ( Modeler modeler = new Modeler( TEST_REPOSITORY_STORE_PARENT_PATH ) ) {
             final ModelTypeManagerImpl modelTypeManager = ( ModelTypeManagerImpl ) modeler.modelTypeManager();
             repos = modelTypeManager.modelTypeRepositories().size();
             modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
             modelTypeManager.install( "java" );
             modelTypeManager.install( "xsd" );
         }
-        try ( Modeler modeler = new Modeler( Modeler.DEFAULT_MODESHAPE_CONFIGURATION_PATH, TEST_REPOSITORY_STORE_PARENT_PATH ) ) {
+        try ( Modeler modeler = new Modeler( TEST_REPOSITORY_STORE_PARENT_PATH ) ) {
             final ModelTypeManagerImpl modelTypeManager = ( ModelTypeManagerImpl ) modeler.modelTypeManager();
             assertThat( modelTypeManager.modelTypeRepositories().size(), not( repos ) );
             assertThat( modelTypeManager.modelTypes().isEmpty(), is( false ) );

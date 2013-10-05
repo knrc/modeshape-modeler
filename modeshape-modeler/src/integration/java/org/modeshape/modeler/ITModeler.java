@@ -34,7 +34,7 @@ import javax.jcr.Session;
 import org.junit.Test;
 import org.modeshape.modeler.integration.BaseIntegrationTest;
 import org.modeshape.modeler.internal.Manager;
-import org.modeshape.modeler.internal.ModelTypeManagerImpl;
+import org.modeshape.modeler.internal.ModelImpl;
 import org.modeshape.modeler.internal.Task;
 
 @SuppressWarnings( "javadoc" )
@@ -82,13 +82,13 @@ public class ITModeler extends BaseIntegrationTest {
     @Test( expected = ModelerException.class )
     public void shouldFailToCreateDefaultModelIfFileIsInvalid() throws Exception {
         modelTypeManager.install( "xml" );
-        modeler.createDefaultModel( importArtifact( XML_ARTIFACT + "<stuff>" ) );
+        modeler.createDefaultModel( importArtifact( XML_DECLARATION + "<stuff>" ) );
     }
     
     @Test( expected = ModelerException.class )
     public void shouldFailToCreateModelIfFileIsInvalid() throws Exception {
         modelTypeManager.install( "xml" );
-        modeler.createModel( importArtifact( XML_ARTIFACT + "<stuff>" ), modelTypeManager.modelTypes().iterator().next() );
+        modeler.createModel( importArtifact( XML_DECLARATION + "<stuff>" ), modelTypeManager.modelTypes().iterator().next() );
     }
     
     @Test( expected = ModelerException.class )
@@ -115,15 +115,12 @@ public class ITModeler extends BaseIntegrationTest {
         assertThat( xsdModelType, notNullValue() );
         
         final String path = importArtifact( XSD_ARTIFACT );
-        final String modelNodePath = modeler.createModel( path, xsdModelType );
-        final ModelTypeManagerImpl modelTypeMgr = modelTypeManager;
-        
+        final ModelImpl model = ( ModelImpl ) modeler.createModel( path, xsdModelType );
         modeler.manager.run( new Task< Void >() {
             
             @Override
             public Void run( final Session session ) throws Exception {
-                final Node modelNode = session.getNode( modelNodePath );
-                assertThat( modelTypeMgr.dependencyProcessor( modelNode ), nullValue() );
+                assertThat( modelTypeManager.dependencyProcessor( session.getNode( model.path() ) ), nullValue() );
                 return null;
             }
         } );

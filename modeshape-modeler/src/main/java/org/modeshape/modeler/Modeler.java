@@ -38,6 +38,7 @@ import org.modeshape.jcr.api.ValueFactory;
 import org.modeshape.jcr.api.sequencer.Sequencer;
 import org.modeshape.modeler.internal.DependencyProcessor;
 import org.modeshape.modeler.internal.Manager;
+import org.modeshape.modeler.internal.ModelImpl;
 import org.modeshape.modeler.internal.ModelTypeImpl;
 import org.modeshape.modeler.internal.Task;
 import org.polyglotter.common.Logger;
@@ -63,21 +64,20 @@ public final class Modeler implements AutoCloseable {
      *         if any error occurs
      */
     public Modeler( final String repositoryStoreParentPath ) throws ModelerException {
-        this( DEFAULT_MODESHAPE_CONFIGURATION_PATH, repositoryStoreParentPath );
+        this( repositoryStoreParentPath, DEFAULT_MODESHAPE_CONFIGURATION_PATH );
     }
     
     /**
-     * @param modeShapeConfigurationPath
-     *        the path to a ModeShape configuration file
      * @param repositoryStoreParentPath
      *        the path to the folder that should contain the ModeShape repository store
+     * @param modeShapeConfigurationPath
+     *        the path to a ModeShape configuration file
      * @throws ModelerException
      *         if any error occurs
      */
-    public Modeler( final String modeShapeConfigurationPath,
-                    final String repositoryStoreParentPath ) throws ModelerException {
-        CheckArg.isNotEmpty( modeShapeConfigurationPath, "modeShapeConfigurationPath" );
-        manager = new Manager( modeShapeConfigurationPath, repositoryStoreParentPath );
+    public Modeler( final String repositoryStoreParentPath,
+                    final String modeShapeConfigurationPath ) throws ModelerException {
+        manager = new Manager( repositoryStoreParentPath, modeShapeConfigurationPath );
     }
     
     /**
@@ -94,30 +94,32 @@ public final class Modeler implements AutoCloseable {
     
     /**
      * @param artifactPath
-     *        the repository path to an artifact
+     *        the repository path to an artifact; must not be empty.
+     * @return a new model of the default type, determined by the artifact's content, and if the artifact is a file, its file
+     *         extension; never <code>null</code>
      * @throws ModelerException
      *         if any problem occurs
      */
-    public void createDefaultModel( final String artifactPath ) throws ModelerException {
-        createModel( artifactPath, null );
+    public Model createDefaultModel( final String artifactPath ) throws ModelerException {
+        return createModel( artifactPath, null );
     }
     
     /**
      * @param artifactPath
-     *        the repository path to an artifact
+     *        the repository path to an artifact; must not be empty.
      * @param modelType
-     *        the type of model to be created for the supplied artifact
-     * @return the path to the model node (never <code>null</code>)
+     *        the type of model to be created for the supplied artifact; may be <code>null</code>.
+     * @return a new model of the supplied type; never <code>null</code>
      * @throws ModelerException
      *         if any problem occurs
      */
-    public String createModel( final String artifactPath,
-                               final ModelType modelType ) throws ModelerException {
+    public Model createModel( final String artifactPath,
+                              final ModelType modelType ) throws ModelerException {
         CheckArg.isNotEmpty( artifactPath, "artifactPath" );
-        return manager.run( new Task< String >() {
+        return manager.run( new Task< Model >() {
             
             @Override
-            public String run( final Session session ) throws Exception {
+            public Model run( final Session session ) throws Exception {
                 final Node artifactNode = manager.artifactNode( session, artifactPath );
                 ModelType type = modelType;
                 if ( modelType == null ) {
@@ -154,7 +156,7 @@ public final class Modeler implements AutoCloseable {
                 if ( save ) {
                     processDependencies( modelNode );
                     session.save();
-                    return modelNode.getPath();
+                    return new ModelImpl( manager, modelNode.getPath() );
                 }
                 
                 throw new ModelerException( ModelerI18n.sessionNotSavedWhenCreatingModel, artifactPath );

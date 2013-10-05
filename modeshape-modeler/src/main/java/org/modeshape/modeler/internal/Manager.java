@@ -80,17 +80,17 @@ public final class Manager {
     public final ModelTypeManagerImpl modelTypeManager;
     
     /**
-     * @param modeShapeConfigurationPath
-     *        the path to a ModeShape configuration file
      * @param repositoryStoreParentPath
      *        the path to the folder that should contain the ModeShape repository store
+     * @param modeShapeConfigurationPath
+     *        the path to a ModeShape configuration file
      * @throws ModelerException
      *         if any error occurs
      */
-    public Manager( final String modeShapeConfigurationPath,
-                    final String repositoryStoreParentPath ) throws ModelerException {
-        CheckArg.isNotEmpty( modeShapeConfigurationPath, "modeShapeConfigurationPath" );
+    public Manager( final String repositoryStoreParentPath,
+                    final String modeShapeConfigurationPath ) throws ModelerException {
         CheckArg.isNotEmpty( repositoryStoreParentPath, "repositoryStoreParentPath" );
+        CheckArg.isNotEmpty( modeShapeConfigurationPath, "modeShapeConfigurationPath" );
         System.setProperty( REPOSITORY_STORE_PARENT_PATH_PROPERTY, repositoryStoreParentPath );
         this.modeShapeConfigurationPath = modeShapeConfigurationPath;
         try {
