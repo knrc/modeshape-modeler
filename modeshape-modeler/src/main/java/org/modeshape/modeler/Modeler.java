@@ -41,6 +41,7 @@ import org.modeshape.modeler.internal.DependencyProcessor;
 import org.modeshape.modeler.internal.Manager;
 import org.modeshape.modeler.internal.ModelImpl;
 import org.modeshape.modeler.internal.ModelTypeImpl;
+import org.modeshape.modeler.internal.ModelerLexicon;
 import org.modeshape.modeler.internal.Task;
 import org.polyglotter.common.Logger;
 
@@ -79,6 +80,10 @@ public final class Modeler implements AutoCloseable {
     public Modeler( final String repositoryStoreParentPath,
                     final String modeShapeConfigurationPath ) throws ModelerException {
         manager = new Manager( repositoryStoreParentPath, modeShapeConfigurationPath );
+    }
+    
+    Modeler accessThis() {
+        return this;
     }
     
     /**
@@ -135,9 +140,9 @@ public final class Modeler implements AutoCloseable {
                 final Calendar cal = Calendar.getInstance();
                 final ModelTypeImpl modelType = ( ModelTypeImpl ) type;
                 final Node modelNode = artifactNode.addNode( type.name() );
-                modelNode.addMixin( Manager.MODEL_NODE_MIXIN );
-                modelNode.setProperty( Manager.EXTERNAL_LOCATION,
-                                       artifactNode.getProperty( Manager.EXTERNAL_LOCATION ).getString() );
+                modelNode.addMixin( ModelerLexicon.MODEL_MIXIN );
+                modelNode.setProperty( ModelerLexicon.EXTERNAL_LOCATION,
+                                       artifactNode.getProperty( ModelerLexicon.EXTERNAL_LOCATION ).getString() );
                 final boolean save = modelType.sequencer().execute( artifactNode.getNode( JcrLexicon.CONTENT.getString() )
                                                                                 .getProperty( JcrLexicon.DATA.getString() ),
                                                                     modelNode,
@@ -154,7 +159,7 @@ public final class Modeler implements AutoCloseable {
                                                                         }
                                                                     } );
                 if ( save ) {
-                    processDependencies( modelNode );
+                    processDependencies( modelNode, modelType );
                     session.save();
                     return new ModelImpl( manager, modelNode.getPath() );
                 }
@@ -191,8 +196,8 @@ public final class Modeler implements AutoCloseable {
                                                              workspacePath + urlPath.substring( urlPath.lastIndexOf( '/' ) + 1 ),
                                                              stream );
                 // Add unstructured mix-in to allow node to contain anything else, like models created later
-                node.addMixin( Manager.UNSTRUCTURED_MIXIN );
-                node.setProperty( Manager.EXTERNAL_LOCATION, url.toString() );
+                node.addMixin( ModelerLexicon.UNSTRUCTURED_MIXIN );
+                node.setProperty( ModelerLexicon.EXTERNAL_LOCATION, url.toString() );
                 session.save();
                 return node.getPath();
             }
@@ -237,12 +242,17 @@ public final class Modeler implements AutoCloseable {
     /**
      * @param modelNode
      *        the model node whose dependency processing is being requested (cannot be <code>null</code>)
+     * @param modelType
+     *        the model type of the model node (cannot be <code>null</code>)
      * @return the path to the dependencies child node or <code>null</code> if no dependencies are found
      * @throws ModelerException
      *         if node is not a model nodel or if an error occurs
      */
-    String processDependencies( final Node modelNode ) throws ModelerException {
+    String processDependencies( final Node modelNode,
+                                final ModelType modelType ) throws ModelerException {
         CheckArg.isNotNull( modelNode, "modelNode" );
+        CheckArg.isNotNull( modelType, "modelType" );
+        
         return manager.run( new Task< String >() {
             
             @Override
@@ -254,7 +264,7 @@ public final class Modeler implements AutoCloseable {
                     return null;
                 }
                 
-                return dependencyProcessor.process( modelNode );
+                return dependencyProcessor.process( modelNode, modelType, accessThis() );
             }
         } );
     }

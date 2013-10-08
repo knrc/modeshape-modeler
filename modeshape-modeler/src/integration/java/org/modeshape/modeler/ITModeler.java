@@ -28,12 +28,10 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 
-import javax.jcr.Node;
 import javax.jcr.Session;
 
 import org.junit.Test;
 import org.modeshape.modeler.integration.BaseIntegrationTest;
-import org.modeshape.modeler.internal.Manager;
 import org.modeshape.modeler.internal.ModelImpl;
 import org.modeshape.modeler.internal.Task;
 
@@ -61,19 +59,6 @@ public class ITModeler extends BaseIntegrationTest {
             @Override
             public Void run( final Session session ) throws Exception {
                 assertThat( session.getNode( path ).hasNode( XSD_MODEL_TYPE_NAME ), is( true ) );
-                return null;
-            }
-        } );
-    }
-    
-    @Test( expected = ModelerException.class )
-    public void shouldFailProcessingDependenciesWhenNodeIsNotAModelNode() throws Exception {
-        modeler.manager.run( new Task< Void >() {
-            
-            @Override
-            public Void run( final Session session ) throws Exception {
-                final Node rootNode = session.getRootNode();
-                modeler.processDependencies( rootNode );
                 return null;
             }
         } );
@@ -121,22 +106,6 @@ public class ITModeler extends BaseIntegrationTest {
             @Override
             public Void run( final Session session ) throws Exception {
                 assertThat( modelTypeManager.dependencyProcessor( session.getNode( model.path() ) ), nullValue() );
-                return null;
-            }
-        } );
-    }
-    
-    @Test
-    public void shouldProcessModelNodeWhenNoDependencyProcessorFound() throws Exception {
-        final Modeler accessModeler = modeler;
-        modeler.manager.run( new Task< Void >() {
-            
-            @Override
-            public Void run( final Session session ) throws Exception {
-                final Node rootNode = session.getRootNode();
-                final Node modelNode = rootNode.addNode( "elvis" );
-                modelNode.addMixin( Manager.MODEL_NODE_MIXIN );
-                assertThat( accessModeler.processDependencies( modelNode ), nullValue() );
                 return null;
             }
         } );
