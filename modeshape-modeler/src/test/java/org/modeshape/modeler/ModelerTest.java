@@ -28,12 +28,15 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 
 import java.io.File;
+import java.net.URI;
+import java.net.URL;
 
 import javax.jcr.Node;
 import javax.jcr.Session;
 
 import org.junit.Test;
 import org.modeshape.jcr.JcrLexicon;
+import org.modeshape.modeler.internal.Manager;
 import org.modeshape.modeler.internal.Task;
 import org.modeshape.modeler.test.BaseTest;
 
@@ -44,9 +47,20 @@ public final class ModelerTest extends BaseTest {
     public void shouldCreateModel() throws Exception {
         modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         modelTypeManager.install( "xml" );
-        final String path = modeler.importArtifact( "stuff", stream( XML_ARTIFACT ), null );
+        final URL url = new URL( "File:stuff" );
+        final String path = modeler.importArtifact( url, stream( XML_ARTIFACT ), null );
         final Model model = modeler.createModel( path, modelTypeManager.modelType( XML_MODEL_TYPE_NAME ) );
         assertThat( model, notNullValue() );
+        manager.run( new Task< Void >() {
+            
+            @Override
+            public Void run( final Session session ) throws Exception {
+                final Node node = session.getNode( model.path() );
+                assertThat( node, notNullValue() );
+                assertThat( node.getProperty( Manager.EXTERNAL_LOCATION ).getString(), is( url.toString() ) );
+                return null;
+            }
+        } );
     }
     
     @Test( expected = IllegalArgumentException.class )
@@ -80,18 +94,13 @@ public final class ModelerTest extends BaseTest {
     }
     
     @Test( expected = IllegalArgumentException.class )
-    public void shouldFailToImportArtifactIfNameIsEmpty() throws Exception {
-        modeler.importArtifact( "", stream( "stuff" ), null );
-    }
-    
-    @Test( expected = IllegalArgumentException.class )
     public void shouldFailToImportArtifactIfNameIsNull() throws Exception {
         modeler.importArtifact( null, stream( "stuff" ), null );
     }
     
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToImportArtifactIfStreamIsNull() throws Exception {
-        modeler.importArtifact( "stuff", null, null );
+        modeler.importArtifact( new URL( "File:stuff" ), null, null );
     }
     
     @Test( expected = IllegalArgumentException.class )
@@ -124,14 +133,14 @@ public final class ModelerTest extends BaseTest {
     
     @Test
     public void shouldImportArtifact() throws Exception {
-        final String path = modeler.importArtifact( "stuff", stream( "stuff" ), null );
+        final String path = modeler.importArtifact( new URL( "File:stuff" ), stream( "stuff" ), null );
         assertThat( path, is( "/stuff" ) );
         verifyPathExistsWithContent( path );
     }
     
     @Test
     public void shouldImportArtifactToSuppliedPath() throws Exception {
-        final String path = modeler.importArtifact( "stuff", stream( "stuff" ), "/test" );
+        final String path = modeler.importArtifact( new URL( "File:stuff" ), stream( "stuff" ), "/test" );
         assertThat( path, is( "/test/stuff" ) );
         verifyPathExistsWithContent( path );
     }
@@ -150,6 +159,38 @@ public final class ModelerTest extends BaseTest {
                                                 "/test" );
         assertThat( path, is( "/test/Books.xsd" ) );
         verifyPathExistsWithContent( path );
+    }
+    
+    @Test
+    public void shouldRecordURLIfImportArtifact() throws Exception {
+        final URL url = new URL( "File:stuff" );
+        final String path = modeler.importArtifact( url, stream( "stuff" ), "/test" );
+        manager.run( new Task< Void >() {
+            
+            @Override
+            public Void run( final Session session ) throws Exception {
+                final Node node = session.getNode( path );
+                assertThat( node, notNullValue() );
+                assertThat( node.getProperty( Manager.EXTERNAL_LOCATION ).getString(), is( url.toString() ) );
+                return null;
+            }
+        } );
+    }
+    
+    @Test
+    public void shouldRecordURLIfImportFile() throws Exception {
+        final URI uri = getClass().getClassLoader().getResource( "Books.xsd" ).toURI();
+        final String path = modeler.importFile( new File( uri ), "/test" );
+        manager.run( new Task< Void >() {
+            
+            @Override
+            public Void run( final Session session ) throws Exception {
+                final Node node = session.getNode( path );
+                assertThat( node, notNullValue() );
+                assertThat( node.getProperty( Manager.EXTERNAL_LOCATION ).getString(), is( uri.toString() ) );
+                return null;
+            }
+        } );
     }
     
     private void verifyPathExistsWithContent( final String path ) throws Exception {

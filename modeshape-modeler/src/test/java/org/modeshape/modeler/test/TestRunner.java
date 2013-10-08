@@ -21,7 +21,6 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-
 package org.modeshape.modeler.test;
 
 import java.text.CharacterIterator;
@@ -33,9 +32,6 @@ import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 
-/**
- * 
- */
 @SuppressWarnings( "javadoc" )
 public class TestRunner extends BlockJUnit4ClassRunner {
     
