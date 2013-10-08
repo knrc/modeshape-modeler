@@ -395,6 +395,7 @@
   <!-- modules in alphabetical order -->
   <modules>
     <module>modeshape-modeler</module>
+    <module>modeshape-modeler-xsd</module>
   </modules>
   
   <dependencies>

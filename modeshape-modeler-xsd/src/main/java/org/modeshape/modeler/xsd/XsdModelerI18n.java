@@ -21,20 +21,18 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-<nt='http://www.jcp.org/jcr/nt/1.0'>
-<mm='http://modeshape.org/modeshape-modeler/1.0'>
+package org.modeshape.modeler.xsd;
 
-[mm:unstructured] mixin orderable
-  - * (undefined) multiple
-  - * (undefined)
-  + * (nt:base) = nt:unstructured sns version
+import org.polyglotter.common.I18n;
 
-[mm:dependency] > nt:unstructured
-  - mm:sourceReference (string) multiple
-  - mm:path (string)
-  
-[mm:dependencies]
-  + mm:dependency (mm:dependency) sns
-
-[mm:model] mixin
-  + mm:dependencies (mm:dependencies)
+/**
+ * Internationalized string constants, in alphabetical order, for the <strong>XSD ModeShape Modeler</strong> project.
+ */
+@SuppressWarnings( "javadoc" )
+public class XsdModelerI18n {
+    
+    public static I18n notAnXsdModel = new I18n( "Model node '%s' is not an XSD model node" );
+    public static I18n relativePathNotValid = new I18n( "The relative path of '%s' is not value for dependency node '%s'" );
+    public static I18n schemaNodeNotFound = new I18n( "The sequencer produced XSD schema node under the file node was not found for model node '%s'" );
+    
+}

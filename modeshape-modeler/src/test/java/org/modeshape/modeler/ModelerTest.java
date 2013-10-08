@@ -36,7 +36,7 @@ import javax.jcr.Session;
 
 import org.junit.Test;
 import org.modeshape.jcr.JcrLexicon;
-import org.modeshape.modeler.internal.Manager;
+import org.modeshape.modeler.internal.ModelerLexicon;
 import org.modeshape.modeler.internal.Task;
 import org.modeshape.modeler.test.BaseTest;
 
@@ -57,7 +57,7 @@ public final class ModelerTest extends BaseTest {
             public Void run( final Session session ) throws Exception {
                 final Node node = session.getNode( model.path() );
                 assertThat( node, notNullValue() );
-                assertThat( node.getProperty( Manager.EXTERNAL_LOCATION ).getString(), is( url.toString() ) );
+                assertThat( node.getProperty( ModelerLexicon.EXTERNAL_LOCATION ).getString(), is( url.toString() ) );
                 return null;
             }
         } );
@@ -171,7 +171,7 @@ public final class ModelerTest extends BaseTest {
             public Void run( final Session session ) throws Exception {
                 final Node node = session.getNode( path );
                 assertThat( node, notNullValue() );
-                assertThat( node.getProperty( Manager.EXTERNAL_LOCATION ).getString(), is( url.toString() ) );
+                assertThat( node.getProperty( ModelerLexicon.EXTERNAL_LOCATION ).getString(), is( url.toString() ) );
                 return null;
             }
         } );
@@ -187,7 +187,7 @@ public final class ModelerTest extends BaseTest {
             public Void run( final Session session ) throws Exception {
                 final Node node = session.getNode( path );
                 assertThat( node, notNullValue() );
-                assertThat( node.getProperty( Manager.EXTERNAL_LOCATION ).getString(), is( uri.toString() ) );
+                assertThat( node.getProperty( ModelerLexicon.EXTERNAL_LOCATION ).getString(), is( uri.toString() ) );
                 return null;
             }
         } );

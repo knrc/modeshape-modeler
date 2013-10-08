@@ -219,7 +219,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
             boolean foundMixin = false;
             
             for ( final NodeType mixin : modelNode.getMixinNodeTypes() ) {
-                if ( Manager.MODEL_NODE_MIXIN.equals( mixin.getName() ) ) {
+                if ( ModelerLexicon.MODEL_MIXIN.equals( mixin.getName() ) ) {
                     foundMixin = true;
                     break;
                 }
@@ -309,7 +309,7 @@ public final class ModelTypeManagerImpl implements ModelTypeManager {
                                                                    systemNode.getPath() + '/' + JARS + '/'
                                                                                    + jarPath.getFileName().toString(),
                                                                    stream );
-                                    node.addMixin( Manager.UNSTRUCTURED_MIXIN );
+                                    node.addMixin( ModelerLexicon.UNSTRUCTURED_MIXIN );
                                     node.setProperty( CATEGORY, category );
                                     session.save();
                                 }

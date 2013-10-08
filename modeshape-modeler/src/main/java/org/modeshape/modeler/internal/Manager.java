@@ -47,26 +47,6 @@ import org.polyglotter.common.Logger;
 public final class Manager {
     
     /**
-     * ModeShape Modeler namespace prefix
-     */
-    public static final String NS = "mm:";
-    
-    /**
-     * the mixin applied to imported files that enables models to be created as children of those files
-     */
-    public static final String UNSTRUCTURED_MIXIN = NS + "unstructured";
-    
-    /**
-     * The mixin type of a model node.
-     */
-    public static final String MODEL_NODE_MIXIN = NS + "model";
-    
-    /**
-     * The mixin type of a model node.
-     */
-    public static final String EXTERNAL_LOCATION = NS + "externalLocation";
-    
-    /**
      * 
      */
     public static final String REPOSITORY_STORE_PARENT_PATH_PROPERTY = "org.modeshape.modeler.repositoryStoreParentPath";

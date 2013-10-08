@@ -55,7 +55,7 @@ public class ITModelTypeManager extends BaseIntegrationTest {
             public Void run( final Session session ) throws Exception {
                 final Node rootNode = session.getRootNode();
                 final Node modelNode = rootNode.addNode( "elvis" );
-                modelNode.addMixin( Manager.MODEL_NODE_MIXIN );
+                modelNode.addMixin( ModelerLexicon.MODEL_MIXIN );
                 assertThat( modelTypeManager.dependencyProcessor( modelNode ), nullValue() );
                 return null;
             }

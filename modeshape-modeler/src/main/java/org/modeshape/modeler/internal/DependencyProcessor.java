@@ -25,16 +25,48 @@ package org.modeshape.modeler.internal;
 
 import javax.jcr.Node;
 
+import org.modeshape.modeler.ModelType;
+import org.modeshape.modeler.Modeler;
+import org.modeshape.modeler.ModelerException;
+
 /**
  * Processes dependencies for a specific model type.
  */
 public interface DependencyProcessor {
     
     /**
+     * A relative path segment for the parent path. Value is {@value} .
+     */
+    String PARENT_PATH = "..";
+    
+    /**
+     * A relative path segment for the current path. Value is {@value} .
+     */
+    String SELF_PATH = ".";
+    
+    /**
      * @param modelNode
      *        the model node whose dependencies are being processed (cannot be <code>null</code>)
+     * @param modelType
+     *        the model type of the model node (cannot be <code>null</code>)
+     * @param modeler
+     *        the modeler used to upload dependency artifacts and create models (cannot be <code>null</code>)
      * @return the path to the dependencies node or <code>null</code> if no dependencies found
+     * @throws ModelerException
+     *         if the specified model node is not valid for this processor or if there is an error during processing
+     * @see #processable(Node)
      */
-    String process( Node modelNode );
+    String process( final Node modelNode,
+                    final ModelType modelType,
+                    final Modeler modeler ) throws ModelerException;
+    
+    /**
+     * @param modelNode
+     *        the model node being checked (cannot be <code>null</code>)
+     * @return <code>true</code> if the specified node can be processed
+     * @throws ModelerException
+     *         if an error occurs
+     */
+    boolean processable( final Node modelNode ) throws ModelerException;
     
 }
