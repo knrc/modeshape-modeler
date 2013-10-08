@@ -220,10 +220,10 @@ public class ModelImplTest extends BaseTest {
     }
     
     @Test
-    public void shouldGetEmptyPropertyValuesByNameMapIfNoProperties() throws Exception {
+    public void shouldGetMinimumPropertyValuesByNameMapIfNoProperties() throws Exception {
         final Map< String, Object > propertyValuesByName = model.propertyValuesByName();
         assertThat( propertyValuesByName, notNullValue() );
-        assertThat( propertyValuesByName.isEmpty(), is( true ) );
+        assertThat( propertyValuesByName.size(), is( 1 ) );
     }
     
     @Test
