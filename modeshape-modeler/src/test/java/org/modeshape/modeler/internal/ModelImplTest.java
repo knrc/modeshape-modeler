@@ -28,6 +28,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 
+import java.net.URL;
 import java.util.Map;
 
 import org.junit.Test;
@@ -54,7 +55,7 @@ public class ModelImplTest extends BaseTest {
         super.before();
         modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         modelTypeManager.install( "xml" );
-        final String path = modeler.importArtifact( ARTIFACT_NAME, stream( XML_ARTIFACT ), null );
+        final String path = modeler.importArtifact( new URL( "File:" + ARTIFACT_NAME ), stream( XML_ARTIFACT ), null );
         model = modeler.createModel( path, modelTypeManager.modelType( XML_MODEL_TYPE_NAME ) );
         assertThat( model, notNullValue() );
     }

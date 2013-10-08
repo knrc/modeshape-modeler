@@ -43,9 +43,6 @@ import org.modeshape.modeler.TestUtil;
 import org.modeshape.modeler.internal.Manager;
 import org.modeshape.modeler.internal.ModelTypeManagerImpl;
 
-/**
- * Superclass for all test classes
- */
 @RunWith( TestRunner.class )
 @SuppressWarnings( "javadoc" )
 public abstract class BaseTest {
@@ -120,7 +117,7 @@ public abstract class BaseTest {
     }
     
     protected String importArtifact( final String artifactPath ) throws Exception {
-        return modeler.importArtifact( "stuff", new ByteArrayInputStream( artifactPath.getBytes() ), null );
+        return modeler.importArtifact( new URL( "file:stuff" ), new ByteArrayInputStream( artifactPath.getBytes() ), null );
     }
     
     protected InputStream stream( final String artifactPath ) {

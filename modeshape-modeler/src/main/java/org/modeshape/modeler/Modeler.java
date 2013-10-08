@@ -26,6 +26,7 @@ package org.modeshape.modeler;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.Calendar;
 
 import javax.jcr.Node;
@@ -132,11 +133,11 @@ public final class Modeler implements AutoCloseable {
                 // Build the model
                 final ValueFactory valueFactory = ( ValueFactory ) session.getValueFactory();
                 final Calendar cal = Calendar.getInstance();
-                
                 final ModelTypeImpl modelType = ( ModelTypeImpl ) type;
                 final Node modelNode = artifactNode.addNode( type.name() );
                 modelNode.addMixin( Manager.MODEL_NODE_MIXIN );
-                
+                modelNode.setProperty( Manager.EXTERNAL_LOCATION,
+                                       artifactNode.getProperty( Manager.EXTERNAL_LOCATION ).getString() );
                 final boolean save = modelType.sequencer().execute( artifactNode.getNode( JcrLexicon.CONTENT.getString() )
                                                                                 .getProperty( JcrLexicon.DATA.getString() ),
                                                                     modelNode,
@@ -152,20 +153,18 @@ public final class Modeler implements AutoCloseable {
                                                                             return valueFactory;
                                                                         }
                                                                     } );
-                
                 if ( save ) {
                     processDependencies( modelNode );
                     session.save();
                     return new ModelImpl( manager, modelNode.getPath() );
                 }
-                
                 throw new ModelerException( ModelerI18n.sessionNotSavedWhenCreatingModel, artifactPath );
             }
         } );
     }
     
     /**
-     * @param name
+     * @param url
      *        the name of the artifact as it should be stored in the repository. Must not be empty.
      * @param stream
      *        the artifact's content to be imported. Must not be <code>null</code>.
@@ -175,21 +174,25 @@ public final class Modeler implements AutoCloseable {
      * @throws ModelerException
      *         if any problem occurs
      */
-    public String importArtifact( final String name,
+    public String importArtifact( final URL url,
                                   final InputStream stream,
                                   final String workspaceParentPath ) throws ModelerException {
-        CheckArg.isNotEmpty( name, "name" );
+        CheckArg.isNotNull( url, "name" );
         CheckArg.isNotNull( stream, "stream" );
         return manager.run( new Task< String >() {
             
             @Override
             public String run( final Session session ) throws Exception {
                 // Ensure the path is non-null, ending with a slash
-                String path = workspaceParentPath == null ? "/" : workspaceParentPath;
-                if ( !path.endsWith( "/" ) ) path += '/';
-                final Node node = new JcrTools().uploadFile( session, path + name, stream );
+                String workspacePath = workspaceParentPath == null ? "/" : workspaceParentPath;
+                if ( !workspacePath.endsWith( "/" ) ) workspacePath += '/';
+                final String urlPath = url.getPath();
+                final Node node = new JcrTools().uploadFile( session,
+                                                             workspacePath + urlPath.substring( urlPath.lastIndexOf( '/' ) + 1 ),
+                                                             stream );
                 // Add unstructured mix-in to allow node to contain anything else, like models created later
                 node.addMixin( Manager.UNSTRUCTURED_MIXIN );
+                node.setProperty( Manager.EXTERNAL_LOCATION, url.toString() );
                 session.save();
                 return node.getPath();
             }
@@ -210,7 +213,8 @@ public final class Modeler implements AutoCloseable {
         CheckArg.isNotNull( file, "file" );
         if ( !file.exists() ) throw new IllegalArgumentException( ModelerI18n.fileNotFound.text( file ) );
         try {
-            return importArtifact( file.getName(), file.toURI().toURL().openStream(), workspaceParentPath );
+            final URL url = file.toURI().toURL();
+            return importArtifact( url, url.openStream(), workspaceParentPath );
         } catch ( final IOException e ) {
             throw new ModelerException( e );
         }
