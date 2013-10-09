@@ -39,4 +39,5 @@ public final class ModelerI18n {
     public static final I18n unableToFindModelTypeCategory =
         new I18n( "Unable to find model type category \"%s\" in registered model type repositories" );
     public static final I18n urlNotFound = new I18n( "URL not found: %s" );
+    public static final I18n notModelPath = new I18n( "Not a path to a model: %s" );
 }
