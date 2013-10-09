@@ -32,6 +32,7 @@ import java.net.URL;
 import java.util.Calendar;
 
 import javax.jcr.Node;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.Session;
 
 import org.modeshape.common.util.CheckArg;
@@ -96,10 +97,6 @@ public final class Modeler implements AutoCloseable {
                          final String name ) {
         path = absolutePath( path );
         return path.endsWith( "/" ) ? path + name : path + '/' + name;
-    }
-    
-    Modeler accessThis() {
-        return this;
     }
     
     /**
@@ -405,6 +402,32 @@ public final class Modeler implements AutoCloseable {
     }
     
     /**
+     * @param path
+     *        a workspace path for a model
+     * @return the model at the supplied path
+     * @throws ModelerException
+     *         if any error occurs
+     */
+    public Model model( final String path ) throws ModelerException {
+        CheckArg.isNotEmpty( path, "path" );
+        return manager.run( new Task< Model >() {
+            
+            @Override
+            public Model run( final Session session ) throws Exception {
+                try {
+                    final String absPath = absolutePath( path );
+                    final Node node = session.getNode( absPath );
+                    if ( !node.isNodeType( ModelerLexicon.MODEL_MIXIN ) )
+                        throw new IllegalArgumentException( ModelerI18n.notModelPath.text( absPath ) );
+                    return new ModelImpl( manager, absPath );
+                } catch ( final PathNotFoundException e ) {
+                    throw new IllegalArgumentException( e );
+                }
+            }
+        } );
+    }
+    
+    /**
      * @return the model type manager
      */
     public ModelTypeManager modelTypeManager() {
@@ -451,7 +474,7 @@ public final class Modeler implements AutoCloseable {
                     return null;
                 }
                 
-                return dependencyProcessor.process( modelNode, modelType, accessThis() );
+                return dependencyProcessor.process( modelNode, modelType, Modeler.this );
             }
         } );
     }

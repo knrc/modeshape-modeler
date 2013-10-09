@@ -53,6 +53,7 @@ public abstract class BaseTest {
     protected static final URL MODEL_TYPE_REPOSITORY;
     
     protected static final String ARTIFACT_NAME = "artifact";
+    protected static final String XML_MODEL_TYPE_CATEGORY = "xml";
     protected static final String XML_ROOT = "root";
     protected static final String XML_LEAF = "child";
     protected static final String XML_STRING_VALUE = "string";

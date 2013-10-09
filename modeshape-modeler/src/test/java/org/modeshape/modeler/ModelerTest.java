@@ -114,6 +114,27 @@ public final class ModelerTest extends BaseTest {
     }
     
     @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToGetModelIfPathEmpty() throws Exception {
+        modeler.model( " " );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToGetModelIfPathNotFound() throws Exception {
+        modeler.model( "pathNotFound" );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToGetModelIfPathNotModel() throws Exception {
+        modeler.importArtifact( stream( XML_ARTIFACT ), ARTIFACT_NAME );
+        modeler.model( ARTIFACT_NAME );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToGetModelIfPathNull() throws Exception {
+        modeler.model( null );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
     public void shouldFailToImportArtifactIfNotFound() throws Exception {
         modeler.importArtifact( new URL( "file:doesNotExist" ), null );
     }
@@ -223,6 +244,15 @@ public final class ModelerTest extends BaseTest {
         final Modeler modeler = new Modeler( this.modeler.repositoryStoreParentPath() );
         assertThat( modeler.modeShapeConfigurationPath(), is( Modeler.DEFAULT_MODESHAPE_CONFIGURATION_PATH ) );
         modeler.close();
+    }
+    
+    @Test
+    public void shouldGetModel() throws Exception {
+        modelTypeManager.install( XML_MODEL_TYPE_CATEGORY );
+        final Model generatedModel =
+            modeler.generateModel( stream( XML_ARTIFACT ), ARTIFACT_NAME, modelTypeManager.modelType( XML_MODEL_TYPE_NAME ) );
+        final Model model = modeler.model( ARTIFACT_NAME );
+        assertThat( model, is( generatedModel ) );
     }
     
     @Test
