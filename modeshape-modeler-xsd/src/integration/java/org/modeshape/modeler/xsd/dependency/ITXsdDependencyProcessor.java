@@ -25,6 +25,7 @@ package org.modeshape.modeler.xsd.dependency;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 
 import java.io.File;
@@ -64,6 +65,61 @@ public class ITXsdDependencyProcessor extends BaseIntegrationTest {
     }
     
     @Test
+    public void shouldNotFindDependenciesInMusicXsd() throws Exception {
+        final URL xsdUrl = getClass().getClassLoader().getResource( "music.xsd" );
+        final String path = this.modeler.importFile( new File( xsdUrl.toURI() ), null );
+        assertThat( path, is( "/music.xsd" ) );
+        
+        final ModelType xsdModelType = xsdModelType();
+        final ModelImpl model = ( ModelImpl ) this.modeler.generateModel( path, ARTIFACT_NAME, xsdModelType );
+        
+        this.manager.run( new Task< Node >() {
+            
+            @Override
+            public Node run( final Session session ) throws Exception {
+                final Node modelNode = session.getNode( model.path() );
+                final String dependenciesPath = processor.process( modelNode, xsdModelType, modeler );
+                assertThat( dependenciesPath, nullValue() );
+                
+                return null;
+            }
+        } );
+    }
+    
+    @Test
+    public void shouldSetDependencyPathsOfBooksXsd() throws Exception {
+        final URL xsdUrl = getClass().getClassLoader().getResource( "Books/Books.xsd" );
+        final String path = this.modeler.importFile( new File( xsdUrl.toURI() ), null );
+        assertThat( path, is( "/Books.xsd" ) );
+        
+        final ModelType xsdModelType = xsdModelType();
+        final ModelImpl model = ( ModelImpl ) this.modeler.generateModel( path, ARTIFACT_NAME, xsdModelType );
+        
+        this.manager.run( new Task< Node >() {
+            
+            @Override
+            public Node run( final Session session ) throws Exception {
+                final Node modelNode = session.getNode( model.path() );
+                final String dependenciesPath = processor.process( modelNode, xsdModelType, modeler );
+                assertThat( dependenciesPath, notNullValue() );
+                
+                final Node dependenciesNode = session.getNode( dependenciesPath );
+                assertThat( dependenciesNode.getNodes().getSize(), is( 1L ) );
+                
+                final Node dependencyNode = dependenciesNode.getNodes().nextNode();
+                assertThat( dependencyNode.getPrimaryNodeType().getName(), is( ModelerLexicon.DEPENDENCY_NODE ) );
+                assertThat( dependencyNode.getProperty( ModelerLexicon.PATH_PROPERTY ).getString(), is( "/data/types/BookDatatypes.xsd" ) );
+                
+                final String input =
+                    dependencyNode.getProperty( ModelerLexicon.SOURCE_REFERENCE_PROPERTY ).getValues()[ 0 ].getString();
+                assertThat( input, is( "../data/types/BookDatatypes.xsd" ) );
+                
+                return null;
+            }
+        } );
+    }
+    
+    @Test
     public void shouldSetDependencyPathsOfMoviesXsd() throws Exception {
         final URL xsdUrl = getClass().getClassLoader().getResource( "Movies/Movies.xsd" );
         final String path = this.modeler.importFile( new File( xsdUrl.toURI() ), null );
@@ -85,7 +141,7 @@ public class ITXsdDependencyProcessor extends BaseIntegrationTest {
                 
                 final Node dependencyNode = dependenciesNode.getNodes().nextNode();
                 assertThat( dependencyNode.getPrimaryNodeType().getName(), is( ModelerLexicon.DEPENDENCY_NODE ) );
-                assertThat( dependencyNode.getProperty( ModelerLexicon.PATH_PROPERTY ).getString(), is( "MovieDatatypes.xsd" ) );
+                assertThat( dependencyNode.getProperty( ModelerLexicon.PATH_PROPERTY ).getString(), is( model.path() + "/MovieDatatypes.xsd" ) );
                 
                 final String input =
                     dependencyNode.getProperty( ModelerLexicon.SOURCE_REFERENCE_PROPERTY ).getValues()[ 0 ].getString();
