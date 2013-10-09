@@ -65,9 +65,9 @@ public class ITXsdDependencyProcessor extends BaseIntegrationTest {
     
     @Test
     public void shouldSetDependencyPathsOfMoviesXsd() throws Exception {
-        final URL xsdUrl = getClass().getClassLoader().getResource( "Movies/movies.xsd" );
+        final URL xsdUrl = getClass().getClassLoader().getResource( "Movies/Movies.xsd" );
         final String path = this.modeler.importFile( new File( xsdUrl.toURI() ), null );
-        assertThat( path, is( "/movies.xsd" ) );
+        assertThat( path, is( "/Movies.xsd" ) );
         
         final ModelType xsdModelType = xsdModelType();
         final ModelImpl model = ( ModelImpl ) this.modeler.generateModel( path, ARTIFACT_NAME, xsdModelType );
