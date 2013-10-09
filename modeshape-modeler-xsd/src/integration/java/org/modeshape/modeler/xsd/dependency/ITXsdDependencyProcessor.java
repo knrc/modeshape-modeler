@@ -77,7 +77,7 @@ public class ITXsdDependencyProcessor extends BaseIntegrationTest {
             
             @Override
             public Node run( final Session session ) throws Exception {
-                final Node modelNode = session.getNode( model.path() );
+                final Node modelNode = session.getNode( model.absolutePath() );
                 final String dependenciesPath = processor.process( modelNode, xsdModelType, modeler );
                 assertThat( dependenciesPath, nullValue() );
                 
@@ -99,7 +99,7 @@ public class ITXsdDependencyProcessor extends BaseIntegrationTest {
             
             @Override
             public Node run( final Session session ) throws Exception {
-                final Node modelNode = session.getNode( model.path() );
+                final Node modelNode = session.getNode( model.absolutePath() );
                 final String dependenciesPath = processor.process( modelNode, xsdModelType, modeler );
                 assertThat( dependenciesPath, notNullValue() );
                 
@@ -132,7 +132,7 @@ public class ITXsdDependencyProcessor extends BaseIntegrationTest {
             
             @Override
             public Node run( final Session session ) throws Exception {
-                final Node modelNode = session.getNode( model.path() );
+                final Node modelNode = session.getNode( model.absolutePath() );
                 final String dependenciesPath = processor.process( modelNode, xsdModelType, modeler );
                 assertThat( dependenciesPath, notNullValue() );
                 
@@ -141,7 +141,7 @@ public class ITXsdDependencyProcessor extends BaseIntegrationTest {
                 
                 final Node dependencyNode = dependenciesNode.getNodes().nextNode();
                 assertThat( dependencyNode.getPrimaryNodeType().getName(), is( ModelerLexicon.DEPENDENCY_NODE ) );
-                assertThat( dependencyNode.getProperty( ModelerLexicon.PATH_PROPERTY ).getString(), is( model.path() + "/MovieDatatypes.xsd" ) );
+                assertThat( dependencyNode.getProperty( ModelerLexicon.PATH_PROPERTY ).getString(), is( model.absolutePath() + "/MovieDatatypes.xsd" ) );
                 
                 final String input =
                     dependencyNode.getProperty( ModelerLexicon.SOURCE_REFERENCE_PROPERTY ).getValues()[ 0 ].getString();

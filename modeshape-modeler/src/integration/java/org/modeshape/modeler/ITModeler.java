@@ -102,7 +102,7 @@ public class ITModeler extends BaseIntegrationTest {
             
             @Override
             public Void run( final Session session ) throws Exception {
-                assertThat( modelTypeManager.dependencyProcessor( session.getNode( model.path() ) ), nullValue() );
+                assertThat( modelTypeManager.dependencyProcessor( session.getNode( model.absolutePath() ) ), nullValue() );
                 return null;
             }
         } );

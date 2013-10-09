@@ -38,9 +38,11 @@ import javax.jcr.PropertyType;
 import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
+import javax.jcr.nodetype.NodeType;
 
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrLexicon;
+import org.modeshape.modeler.Model;
 import org.modeshape.modeler.ModelObject;
 import org.modeshape.modeler.ModelerException;
 
@@ -49,13 +51,30 @@ import org.modeshape.modeler.ModelerException;
  */
 public class ModelObjectImpl implements ModelObject {
     
-    final Manager manager;
-    final String path;
+    /**
+     * 
+     */
+    public final Manager manager;
+    
+    /**
+     * 
+     */
+    public final String path;
     
     ModelObjectImpl( final Manager manager,
                      final String path ) {
         this.manager = manager;
         this.path = path;
+    }
+    
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.modeler.ModelObject#absolutePath()
+     */
+    @Override
+    public String absolutePath() {
+        return path;
     }
     
     /**
@@ -168,15 +187,20 @@ public class ModelObjectImpl implements ModelObject {
      * @see org.modeshape.modeler.ModelObject#childrenByName()
      */
     @Override
-    public Map< String, ModelObject > childrenByName() throws ModelerException {
-        return manager.run( new Task< Map< String, ModelObject > >() {
+    public Map< String, List< ModelObject > > childrenByName() throws ModelerException {
+        return manager.run( new Task< Map< String, List< ModelObject > > >() {
             
             @Override
-            public Map< String, ModelObject > run( final Session session ) throws Exception {
-                final Map< String, ModelObject > childrenByName = new HashMap<>();
+            public Map< String, List< ModelObject > > run( final Session session ) throws Exception {
+                final Map< String, List< ModelObject > > childrenByName = new HashMap<>();
                 for ( final NodeIterator iter = session.getNode( path ).getNodes(); iter.hasNext(); ) {
                     final Node node = iter.nextNode();
-                    childrenByName.put( node.getName(), new ModelObjectImpl( manager, node.getPath() ) );
+                    List< ModelObject > modelObjects = childrenByName.get( node.getName() );
+                    if ( modelObjects == null ) {
+                        modelObjects = new ArrayList<>();
+                        childrenByName.put( node.getName(), modelObjects );
+                    }
+                    modelObjects.add( new ModelObjectImpl( manager, node.getPath() ) );
                 }
                 return childrenByName;
             }
@@ -267,11 +291,53 @@ public class ModelObjectImpl implements ModelObject {
             
             @Override
             public String[] run( final Session session ) throws Exception {
-                final Value[] vals = session.getNode( path ).getProperty( JcrLexicon.MIXIN_TYPES.toString() ).getValues();
-                final String[] types = new String[ vals.length ];
-                for ( int ndx = 0; ndx < types.length; ndx++ )
-                    types[ ndx ] = vals[ ndx ].getString();
-                return types;
+                final Node node = session.getNode( path );
+                final NodeType[] nodeTypes = node.getMixinNodeTypes();
+                final String[] mixins = new String[ nodeTypes.length ];
+                for ( int ndx = 0; ndx < mixins.length; ndx++ )
+                    mixins[ ndx ] = nodeTypes[ ndx ].getName();
+                return mixins;
+            }
+        } );
+    }
+    
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.modeler.ModelObject#model()
+     */
+    @Override
+    public Model model() throws ModelerException {
+        if ( this instanceof Model ) return ( Model ) this;
+        return manager.run( new Task< Model >() {
+            
+            @Override
+            public Model run( final Session session ) throws Exception {
+                return new ModelImpl( manager, modelNode( session ).getPath() );
+            }
+        } );
+    }
+    
+    Node modelNode( final Session session ) throws Exception {
+        Node node = session.getNode( path );
+        while ( !node.isNodeType( ModelerLexicon.MODEL_MIXIN ) )
+            node = node.getParent();
+        return node;
+    }
+    
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.modeler.ModelObject#modelRelativePath()
+     */
+    @Override
+    public String modelRelativePath() throws ModelerException {
+        if ( this instanceof Model ) return "";
+        return manager.run( new Task< String >() {
+            
+            @Override
+            public String run( final Session session ) throws Exception {
+                return path.substring( modelNode( session ).getPath().length() + 1 );
             }
         } );
     }
@@ -290,16 +356,6 @@ public class ModelObjectImpl implements ModelObject {
                 return session.getNode( path ).getName();
             }
         } );
-    }
-    
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.modeler.ModelObject#path()
-     */
-    @Override
-    public String path() {
-        return path;
     }
     
     /**
@@ -353,7 +409,8 @@ public class ModelObjectImpl implements ModelObject {
                 final Map< String, Object > valsByName = new HashMap<>();
                 for ( final PropertyIterator iter = session.getNode( path ).getProperties(); iter.hasNext(); ) {
                     final Property prop = iter.nextProperty();
-                    if ( prop.getName().startsWith( JcrLexicon.Namespace.PREFIX ) ) continue;
+                    if ( prop.getName().startsWith( JcrLexicon.Namespace.PREFIX ) ||
+                         prop.getName().startsWith( ModelerLexicon.NAMESPACE_PREFIX ) ) continue;
                     final Object val;
                     switch ( prop.getType() ) {
                         case PropertyType.LONG: {
