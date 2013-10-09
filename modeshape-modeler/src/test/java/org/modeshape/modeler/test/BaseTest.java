@@ -53,20 +53,22 @@ public abstract class BaseTest {
     protected static final URL MODEL_TYPE_REPOSITORY;
     
     protected static final String ARTIFACT_NAME = "artifact";
+    protected static final String MODEL_NAME = "model";
     protected static final String XML_MODEL_TYPE_CATEGORY = "xml";
+    protected static final String XML_MODEL_TYPE_NAME = "org.modeshape.modeler.xml.Xml";
     protected static final String XML_ROOT = "root";
+    protected static final String XML_ROOT_PROPERTY = "property";
     protected static final String XML_LEAF = "child";
     protected static final String XML_STRING_VALUE = "string";
     protected static final String XML_SAME_NAME_SIBLING = "sameNameSibling";
     protected static final String XML_DECLARATION = "<?xml version='1.0' encoding='UTF-8'?>";
     protected static final String XML_ARTIFACT = XML_DECLARATION
-                                                 + '<' + XML_ROOT + " property='" + XML_STRING_VALUE + "'>"
+                                                 + '<' + XML_ROOT + " " + XML_ROOT_PROPERTY + "='" + XML_STRING_VALUE + "'>"
                                                  + "<" + XML_LEAF + "></" + XML_LEAF + ">"
                                                  + "<" + XML_SAME_NAME_SIBLING + "></" + XML_SAME_NAME_SIBLING + ">"
                                                  + "<" + XML_SAME_NAME_SIBLING + "></" + XML_SAME_NAME_SIBLING + ">"
                                                  + "</" + XML_ROOT + ">";
     protected static final String XSD_ARTIFACT = XML_DECLARATION + "<schema></schema>";
-    protected static final String XML_MODEL_TYPE_NAME = "org.modeshape.modeler.xml.Xml";
     
     static {
         try {

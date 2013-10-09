@@ -23,12 +23,18 @@
  */
 package org.modeshape.modeler;
 
+import java.util.List;
 import java.util.Map;
 
 /**
  * 
  */
 public interface ModelObject {
+    
+    /**
+     * @return this model object's absolute workspace path; never <code>null</code>
+     */
+    String absolutePath();
     
     /**
      * @param propertyName
@@ -80,7 +86,7 @@ public interface ModelObject {
      * @throws ModelerException
      *         if any error occurs
      */
-    Map< String, ModelObject > childrenByName() throws ModelerException;
+    Map< String, List< ModelObject > > childrenByName() throws ModelerException;
     
     /**
      * @param propertyName
@@ -108,16 +114,25 @@ public interface ModelObject {
     String[] mixinTypes() throws ModelerException;
     
     /**
+     * @return this model object's enclosing model. Never <code>null</code>.
+     * @throws ModelerException
+     *         if any error occurs
+     */
+    Model model() throws ModelerException;
+    
+    /**
+     * @return this model object's path relative to its {@link #model() model}; never <code>null</code>
+     * @throws ModelerException
+     *         if any error occurs
+     */
+    String modelRelativePath() throws ModelerException;
+    
+    /**
      * @return this model object's name; never <code>null</code>
      * @throws ModelerException
      *         if any error occurs
      */
     String name() throws ModelerException;
-    
-    /**
-     * @return this model object's workspace path; never <code>null</code>
-     */
-    String path();
     
     /**
      * @return this model object's primary type; never <code>null</code>
