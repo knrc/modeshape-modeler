@@ -28,6 +28,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 
 import java.io.File;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 
@@ -35,6 +36,7 @@ import javax.jcr.Node;
 import javax.jcr.Session;
 
 import org.junit.Test;
+import org.mockito.Mock;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.modeler.internal.ModelerLexicon;
 import org.modeshape.modeler.internal.Task;
@@ -43,74 +45,171 @@ import org.modeshape.modeler.test.BaseTest;
 @SuppressWarnings( "javadoc" )
 public final class ModelerTest extends BaseTest {
     
-    @Test
-    public void shouldCreateModel() throws Exception {
-        modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
-        modelTypeManager.install( "xml" );
-        final URL url = new URL( "File:stuff" );
-        final String path = modeler.importArtifact( url, stream( XML_ARTIFACT ), null );
-        final Model model = modeler.createModel( path, modelTypeManager.modelType( XML_MODEL_TYPE_NAME ) );
-        assertThat( model, notNullValue() );
-        manager.run( new Task< Void >() {
-            
-            @Override
-            public Void run( final Session session ) throws Exception {
-                final Node node = session.getNode( model.path() );
-                assertThat( node, notNullValue() );
-                assertThat( node.getProperty( ModelerLexicon.EXTERNAL_LOCATION ).getString(), is( url.toString() ) );
-                return null;
-            }
-        } );
+    @Mock
+    private ModelType modelType;
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToGenerateDefaultModelIfArtifactPathEmpty() throws Exception {
+        modeler.generateDefaultModel( " ", null );
     }
     
     @Test( expected = IllegalArgumentException.class )
-    public void shouldFailToCreateDefaultModelIfPathIsEmpty() throws Exception {
-        modeler.createDefaultModel( " " );
+    public void shouldFailToGenerateDefaultModelIfArtifactPathNull() throws Exception {
+        modeler.generateDefaultModel( null, null );
     }
     
     @Test( expected = IllegalArgumentException.class )
-    public void shouldFailToCreateDefaultModelIfPathIsNull() throws Exception {
-        modeler.createDefaultModel( null );
+    public void shouldFailToGenerateModelFromStreamIfModelTypeNull() throws Exception {
+        modeler.generateModel( stream( XML_ARTIFACT ), ARTIFACT_NAME, null );
     }
     
     @Test( expected = IllegalArgumentException.class )
-    public void shouldFailToCreateModelIfNoDefaultModelType() throws Exception {
-        modeler.createDefaultModel( importArtifact( "stuff" ) );
+    public void shouldFailToGenerateModelFromStreamIfPathEmpty() throws Exception {
+        modeler.generateModel( stream( XML_ARTIFACT ), " ", modelType );
     }
     
     @Test( expected = IllegalArgumentException.class )
-    public void shouldFailToCreateModelIfPathIsEmpty() throws Exception {
-        modeler.createModel( "", null );
+    public void shouldFailToGenerateModelFromStreamIfPathNull() throws Exception {
+        modeler.generateModel( stream( XML_ARTIFACT ), null, modelType );
     }
     
     @Test( expected = IllegalArgumentException.class )
-    public void shouldFailToCreateModelIfPathIsNull() throws Exception {
-        modeler.createModel( null, null );
-    }
-    
-    @Test( expected = ModelerException.class )
-    public void shouldFailToCreateModelIfPathNotFound() throws Exception {
-        modeler.createModel( "dummy", null );
+    public void shouldFailToGenerateModelFromStreamIfStreamNull() throws Exception {
+        modeler.generateModel( ( InputStream ) null, ARTIFACT_NAME, modelType );
     }
     
     @Test( expected = IllegalArgumentException.class )
-    public void shouldFailToImportArtifactIfNameIsNull() throws Exception {
-        modeler.importArtifact( null, stream( "stuff" ), null );
+    public void shouldFailToGenerateModelFromWorkspaceArtifactIfArtifactPathNull() throws Exception {
+        modeler.generateModel( ( String ) null, ARTIFACT_NAME, modelType );
     }
     
     @Test( expected = IllegalArgumentException.class )
-    public void shouldFailToImportArtifactIfStreamIsNull() throws Exception {
-        modeler.importArtifact( new URL( "File:stuff" ), null, null );
+    public void shouldFailToGenerateModelIfArtifactPathEmpty() throws Exception {
+        modeler.generateModel( " ", ARTIFACT_NAME, modelType );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToGenerateModelIfArtifactPathNotFound() throws Exception {
+        modeler.generateModel( "doesNotExist", ARTIFACT_NAME, modelType );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToGenerateModelIfArtifactUrlNotFound() throws Exception {
+        modeler.generateModel( new URL( "file:doesNotExist" ), null, modelType );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToGenerateModelIfArtifactUrlNull() throws Exception {
+        modeler.generateModel( ( URL ) null, null, modelType );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToGenerateModelIfFileNotFound() throws Exception {
+        modeler.generateModel( new File( "doesNotExist" ), null, modelType );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToGenerateModelIfFileNull() throws Exception {
+        modeler.generateModel( ( File ) null, null, modelType );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToImportArtifactIfNotFound() throws Exception {
+        modeler.importArtifact( new URL( "file:doesNotExist" ), null );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToImportArtifactIfPathEmpty() throws Exception {
+        modeler.importArtifact( stream( "stuff" ), " " );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToImportArtifactIfPathNull() throws Exception {
+        modeler.importArtifact( stream( "stuff" ), null );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToImportArtifactIfStreamNull() throws Exception {
+        modeler.importArtifact( ( InputStream ) null, ARTIFACT_NAME );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToImportArtifactIfUrlNull() throws Exception {
+        modeler.importArtifact( ( URL ) null, null );
+    }
+    
+    @Test( expected = IllegalArgumentException.class )
+    public void shouldFailToImportFileIfFileNull() throws Exception {
+        modeler.importFile( null, null );
     }
     
     @Test( expected = IllegalArgumentException.class )
     public void shouldFailToImportFileIfNotFound() throws Exception {
-        modeler.importFile( new File( "dummy.file" ), null );
+        modeler.importFile( new File( "doesNotExist" ), null );
     }
     
     @Test( expected = IllegalArgumentException.class )
-    public void shouldFailToImportIfFileIsNull() throws Exception {
-        modeler.importFile( null, null );
+    public void shouldFailToImportFileUrlIfNotFound() throws Exception {
+        modeler.importArtifact( new URL( "file:doesNotExist" ), null );
+    }
+    
+    @Test
+    public void shouldGenerateModelFromFile() throws Exception {
+        modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
+        modelTypeManager.install( "xml" );
+        final Model model = modeler.generateModel( new File( "src/test/resources/Books.xsd" ),
+                                                   null,
+                                                   modelTypeManager.modelType( XML_MODEL_TYPE_NAME ) );
+        assertThat( model, notNullValue() );
+    }
+    
+    @Test
+    public void shouldGenerateModelFromFileWithSuppliedName() throws Exception {
+        modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
+        modelTypeManager.install( "xml" );
+        final Model model = modeler.generateModel( new File( "src/test/resources/Books.xsd" ),
+                                                   null,
+                                                   ARTIFACT_NAME,
+                                                   modelTypeManager.modelType( XML_MODEL_TYPE_NAME ) );
+        assertThat( model, notNullValue() );
+        assertThat( model.name(), is( ARTIFACT_NAME ) );
+    }
+    
+    @Test
+    public void shouldGenerateModelFromStream() throws Exception {
+        modelTypeManager.install( "xml" );
+        modeler.generateModel( stream( XML_ARTIFACT ), ARTIFACT_NAME, modelTypeManager.modelType( XML_MODEL_TYPE_NAME ) );
+    }
+    
+    @Test
+    public void shouldGenerateModelFromUrl() throws Exception {
+        modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
+        modelTypeManager.install( "xml" );
+        final Model model = modeler.generateModel( new URL( "file:src/test/resources/Books.xsd" ),
+                                                   null,
+                                                   modelTypeManager.modelType( XML_MODEL_TYPE_NAME ) );
+        assertThat( model, notNullValue() );
+    }
+    
+    @Test
+    public void shouldGenerateModelFromUrlWithSuppliedName() throws Exception {
+        modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
+        modelTypeManager.install( "xml" );
+        final Model model = modeler.generateModel( new URL( "file:src/test/resources/Books.xsd" ),
+                                                   null,
+                                                   ARTIFACT_NAME,
+                                                   modelTypeManager.modelType( XML_MODEL_TYPE_NAME ) );
+        assertThat( model, notNullValue() );
+        assertThat( model.name(), is( ARTIFACT_NAME ) );
+    }
+    
+    @Test
+    public void shouldGenerateModelFromWorkspaceArtifact() throws Exception {
+        modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
+        modelTypeManager.install( "xml" );
+        final String path = modeler.importArtifact( stream( XML_ARTIFACT ), ARTIFACT_NAME );
+        final Model model = modeler.generateModel( path, ARTIFACT_NAME, modelTypeManager.modelType( XML_MODEL_TYPE_NAME ) );
+        assertThat( model, notNullValue() );
     }
     
     @Test
@@ -133,14 +232,14 @@ public final class ModelerTest extends BaseTest {
     
     @Test
     public void shouldImportArtifact() throws Exception {
-        final String path = modeler.importArtifact( new URL( "File:stuff" ), stream( "stuff" ), null );
+        final String path = modeler.importArtifact( stream( "stuff" ), "stuff" );
         assertThat( path, is( "/stuff" ) );
         verifyPathExistsWithContent( path );
     }
     
     @Test
     public void shouldImportArtifactToSuppliedPath() throws Exception {
-        final String path = modeler.importArtifact( new URL( "File:stuff" ), stream( "stuff" ), "/test" );
+        final String path = modeler.importArtifact( stream( "stuff" ), "test/stuff" );
         assertThat( path, is( "/test/stuff" ) );
         verifyPathExistsWithContent( path );
     }
@@ -162,9 +261,9 @@ public final class ModelerTest extends BaseTest {
     }
     
     @Test
-    public void shouldRecordURLIfImportArtifact() throws Exception {
-        final URL url = new URL( "File:stuff" );
-        final String path = modeler.importArtifact( url, stream( "stuff" ), "/test" );
+    public void shouldRecordExternalLocationIfImportArtifact() throws Exception {
+        final URL url = new URL( "File:src/test/resources/Books.xsd" );
+        final String path = modeler.importArtifact( url, null );
         manager.run( new Task< Void >() {
             
             @Override
@@ -178,9 +277,9 @@ public final class ModelerTest extends BaseTest {
     }
     
     @Test
-    public void shouldRecordURLIfImportFile() throws Exception {
+    public void shouldRecordUrlIfImportFile() throws Exception {
         final URI uri = getClass().getClassLoader().getResource( "Books.xsd" ).toURI();
-        final String path = modeler.importFile( new File( uri ), "/test" );
+        final String path = modeler.importFile( new File( uri ), null );
         manager.run( new Task< Void >() {
             
             @Override

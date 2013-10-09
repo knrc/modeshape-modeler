@@ -24,8 +24,10 @@
 package org.modeshape.modeler;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Calendar;
 
@@ -51,7 +53,7 @@ import org.polyglotter.common.Logger;
 public final class Modeler implements AutoCloseable {
     
     /**
-     * 
+     * The path to the default ModeShape configuration, which uses a file-based repository
      */
     public static final String DEFAULT_MODESHAPE_CONFIGURATION_PATH = "jcr/modeShapeConfig.json";
     
@@ -82,6 +84,20 @@ public final class Modeler implements AutoCloseable {
         manager = new Manager( repositoryStoreParentPath, modeShapeConfigurationPath );
     }
     
+    String absolutePath( String path ) {
+        if ( path == null ) return "/";
+        path = path.trim();
+        if ( path.isEmpty() ) return "/";
+        if ( path.charAt( 0 ) == '/' ) return path;
+        return '/' + path;
+    }
+    
+    String absolutePath( String path,
+                         final String name ) {
+        path = absolutePath( path );
+        return path.endsWith( "/" ) ? path + name : path + '/' + name;
+    }
+    
     Modeler accessThis() {
         return this;
     }
@@ -100,28 +116,101 @@ public final class Modeler implements AutoCloseable {
     
     /**
      * @param artifactPath
-     *        the repository path to an artifact; must not be empty.
+     *        the workspace path to an artifact; must not be empty.
+     * @param modelPath
+     *        the path where the model should be created
      * @return a new model of the default type, determined by the artifact's content, and if the artifact is a file, its file
      *         extension; never <code>null</code>
      * @throws ModelerException
      *         if any problem occurs
      */
-    public Model createDefaultModel( final String artifactPath ) throws ModelerException {
-        return createModel( artifactPath, null );
+    public Model generateDefaultModel( final String artifactPath,
+                                       final String modelPath ) throws ModelerException {
+        return generateModel( artifactPath, modelPath, null );
     }
     
     /**
-     * @param artifactPath
-     *        the repository path to an artifact; must not be empty.
+     * Creates a model with the name of the supplied file.
+     * 
+     * @param file
+     *        the file to be imported. Must not be <code>null</code>.
+     * @param modelFolder
+     *        the parent path where the model should be created
      * @param modelType
      *        the type of model to be created for the supplied artifact; may be <code>null</code>.
      * @return a new model of the supplied type; never <code>null</code>
      * @throws ModelerException
      *         if any problem occurs
      */
-    public Model createModel( final String artifactPath,
-                              final ModelType modelType ) throws ModelerException {
+    public Model generateModel( final File file,
+                                final String modelFolder,
+                                final ModelType modelType ) throws ModelerException {
+        return generateModel( file, modelFolder, null, modelType );
+    }
+    
+    /**
+     * Creates a model with the name of the supplied file.
+     * 
+     * @param file
+     *        the file to be imported. Must not be <code>null</code>.
+     * @param modelFolder
+     *        the parent path where the model should be created
+     * @param modelName
+     *        the name of the model. If <code>null</code> or empty, the name of the supplied file will be used.
+     * @param modelType
+     *        the type of model to be created for the supplied artifact; may be <code>null</code>.
+     * @return a new model of the supplied type; never <code>null</code>
+     * @throws ModelerException
+     *         if any problem occurs
+     */
+    public Model generateModel( final File file,
+                                final String modelFolder,
+                                final String modelName,
+                                final ModelType modelType ) throws ModelerException {
+        CheckArg.isNotNull( file, "file" );
+        try {
+            return generateModel( file.toURI().toURL(), modelFolder, modelName, modelType );
+        } catch ( final MalformedURLException e ) {
+            throw new ModelerException( e );
+        }
+    }
+    
+    /**
+     * @param stream
+     *        the artifact's content to be imported. Must not be <code>null</code>.
+     * @param modelPath
+     *        the path where the model should be created
+     * @param modelType
+     *        the type of model to be created for the supplied artifact; may be <code>null</code>.
+     * @return a new model of the supplied type; never <code>null</code>
+     * @throws ModelerException
+     *         if any problem occurs
+     */
+    public Model generateModel( final InputStream stream,
+                                final String modelPath,
+                                final ModelType modelType ) throws ModelerException {
+        final String artifactPath = importArtifact( stream, ModelerLexicon.TEMP_FOLDER + "/file" );
+        final Model model = generateModel( artifactPath, modelPath, modelType );
+        removeTemporaryArtifact( artifactPath );
+        return model;
+    }
+    
+    /**
+     * @param artifactPath
+     *        the workspace path to an artifact; must not be empty.
+     * @param modelPath
+     *        the path where the model should be created
+     * @param modelType
+     *        the type of model to be created for the supplied artifact; may be <code>null</code>.
+     * @return a new model of the supplied type; never <code>null</code>
+     * @throws ModelerException
+     *         if any problem occurs
+     */
+    public Model generateModel( final String artifactPath,
+                                final String modelPath,
+                                final ModelType modelType ) throws ModelerException {
         CheckArg.isNotEmpty( artifactPath, "artifactPath" );
+        CheckArg.isNotEmpty( modelPath, "modelPath" );
         return manager.run( new Task< Model >() {
             
             @Override
@@ -134,15 +223,17 @@ public final class Modeler implements AutoCloseable {
                                                                       manager.modelTypeManager.modelTypes( artifactNode ) );
                     if ( type == null )
                         throw new IllegalArgumentException( ModelerI18n.unableToDetermineDefaultModelType.text( artifactPath ) );
+                    throw new UnsupportedOperationException( "Not yet implemented" );
                 }
                 // Build the model
                 final ValueFactory valueFactory = ( ValueFactory ) session.getValueFactory();
                 final Calendar cal = Calendar.getInstance();
                 final ModelTypeImpl modelType = ( ModelTypeImpl ) type;
-                final Node modelNode = artifactNode.addNode( type.name() );
+                final Node modelNode = new JcrTools().findOrCreateNode( session, absolutePath( modelPath ) );
                 modelNode.addMixin( ModelerLexicon.MODEL_MIXIN );
-                modelNode.setProperty( ModelerLexicon.EXTERNAL_LOCATION,
-                                       artifactNode.getProperty( ModelerLexicon.EXTERNAL_LOCATION ).getString() );
+                if ( artifactNode.hasProperty( ModelerLexicon.EXTERNAL_LOCATION ) )
+                    modelNode.setProperty( ModelerLexicon.EXTERNAL_LOCATION,
+                                           artifactNode.getProperty( ModelerLexicon.EXTERNAL_LOCATION ).getString() );
                 final boolean save = modelType.sequencer().execute( artifactNode.getNode( JcrLexicon.CONTENT.getString() )
                                                                                 .getProperty( JcrLexicon.DATA.getString() ),
                                                                     modelNode,
@@ -159,6 +250,7 @@ public final class Modeler implements AutoCloseable {
                                                                         }
                                                                     } );
                 if ( save ) {
+                    modelNode.setProperty( ModelerLexicon.MODEL_TYPE, modelType.name() );
                     processDependencies( modelNode, modelType );
                     session.save();
                     return new ModelImpl( manager, modelNode.getPath() );
@@ -169,35 +261,66 @@ public final class Modeler implements AutoCloseable {
     }
     
     /**
-     * @param url
-     *        the name of the artifact as it should be stored in the repository. Must not be empty.
-     * @param stream
-     *        the artifact's content to be imported. Must not be <code>null</code>.
-     * @param workspaceParentPath
-     *        the path of the parent path where the artifact should be imported
-     * @return the repository path the to imported artifact
+     * @param artifactUrl
+     *        the URL of an artifact; must not be <code>null</code>.
+     * @param modelFolder
+     *        the parent path where the model should be created
+     * @param modelType
+     *        the type of model to be created for the supplied artifact; may be <code>null</code>.
+     * @return a new model of the supplied type; never <code>null</code>
      * @throws ModelerException
      *         if any problem occurs
      */
-    public String importArtifact( final URL url,
-                                  final InputStream stream,
-                                  final String workspaceParentPath ) throws ModelerException {
-        CheckArg.isNotNull( url, "name" );
+    public Model generateModel( final URL artifactUrl,
+                                final String modelFolder,
+                                final ModelType modelType ) throws ModelerException {
+        return generateModel( artifactUrl, modelFolder, null, modelType );
+    }
+    
+    /**
+     * @param artifactUrl
+     *        the URL of an artifact; must not be <code>null</code>.
+     * @param modelFolder
+     *        the parent path where the model should be created
+     * @param modelName
+     *        the name of the model. If <code>null</code> or empty, the name of the supplied file will be used.
+     * @param modelType
+     *        the type of model to be created for the supplied artifact; may be <code>null</code>.
+     * @return a new model of the supplied type; never <code>null</code>
+     * @throws ModelerException
+     *         if any problem occurs
+     */
+    public Model generateModel( final URL artifactUrl,
+                                final String modelFolder,
+                                final String modelName,
+                                final ModelType modelType ) throws ModelerException {
+        final String artifactPath = importArtifact( artifactUrl, ModelerLexicon.TEMP_FOLDER );
+        final Model model = generateModel( artifactPath, absolutePath( modelFolder, name( modelName, artifactUrl ) ), modelType );
+        removeTemporaryArtifact( artifactPath );
+        return model;
+    }
+    
+    /**
+     * @param stream
+     *        the artifact's content to be imported. Must not be <code>null</code>.
+     * @param workspacePath
+     *        the path where the artifact should be imported
+     * @return the workspace path the to imported artifact
+     * @throws ModelerException
+     *         if any problem occurs
+     */
+    public String importArtifact( final InputStream stream,
+                                  final String workspacePath ) throws ModelerException {
         CheckArg.isNotNull( stream, "stream" );
+        CheckArg.isNotEmpty( workspacePath, "workspacePath" );
         return manager.run( new Task< String >() {
             
             @Override
             public String run( final Session session ) throws Exception {
-                // Ensure the path is non-null, ending with a slash
-                String workspacePath = workspaceParentPath == null ? "/" : workspaceParentPath;
-                if ( !workspacePath.endsWith( "/" ) ) workspacePath += '/';
-                final String urlPath = url.getPath();
-                final Node node = new JcrTools().uploadFile( session,
-                                                             workspacePath + urlPath.substring( urlPath.lastIndexOf( '/' ) + 1 ),
-                                                             stream );
+                // Ensure the path is non-null, absolute, and ends with a slash
+                final Node node = new JcrTools().uploadFile( session, absolutePath( workspacePath ), stream );
                 // Add unstructured mix-in to allow node to contain anything else, like models created later
                 node.addMixin( ModelerLexicon.UNSTRUCTURED_MIXIN );
-                node.setProperty( ModelerLexicon.EXTERNAL_LOCATION, url.toString() );
                 session.save();
                 return node.getPath();
             }
@@ -205,22 +328,78 @@ public final class Modeler implements AutoCloseable {
     }
     
     /**
+     * @param url
+     *        the name of the artifact as it should be stored in the workspace. Must not be empty.
+     * @param workspaceFolder
+     *        the parent path where the artifact should be imported
+     * @return the workspace path the to imported artifact
+     * @throws ModelerException
+     *         if any problem occurs
+     */
+    public String importArtifact( final URL url,
+                                  final String workspaceFolder ) throws ModelerException {
+        return importArtifact( url, workspaceFolder, null );
+    }
+    
+    /**
+     * @param url
+     *        the name of the artifact as it should be stored in the workspace. Must not be empty.
+     * @param workspaceFolder
+     *        the parent path where the artifact should be imported
+     * @param workspaceName
+     *        the name of the artifact in the workspace. If <code>null</code> or empty, the last segment of the supplied URL will be
+     *        used.
+     * @return the workspace path the to imported artifact
+     * @throws ModelerException
+     *         if any problem occurs
+     */
+    public String importArtifact( final URL url,
+                                  final String workspaceFolder,
+                                  final String workspaceName ) throws ModelerException {
+        CheckArg.isNotNull( url, "url" );
+        try {
+            final String path = importArtifact( url.openStream(), absolutePath( workspaceFolder, name( workspaceName, url ) ) );
+            saveExternalLocation( path, url.toString() );
+            return path;
+        } catch ( final FileNotFoundException e ) {
+            throw new IllegalArgumentException( e );
+        } catch ( final IOException e ) {
+            throw new ModelerException( e );
+        }
+    }
+    
+    /**
      * @param file
      *        the file to be imported. Must not be <code>null</code>.
-     * @param workspaceParentPath
-     *        the path of the parent path where the file should be imported
-     * @return the repository path the to imported artifact
+     * @param workspaceFolder
+     *        the parent path where the file should be imported
+     * @return the workspace path the to imported artifact
      * @throws ModelerException
      *         if any problem occurs
      */
     public String importFile( final File file,
-                              final String workspaceParentPath ) throws ModelerException {
+                              final String workspaceFolder ) throws ModelerException {
+        return importFile( file, workspaceFolder, null );
+    }
+    
+    /**
+     * @param file
+     *        the file to be imported. Must not be <code>null</code>.
+     * @param workspaceFolder
+     *        the parent path where the file should be imported
+     * @param workspaceName
+     *        the name of the file in the workspace. If <code>null</code> or empty, the name of the supplied file will be used.
+     * @return the workspace path the to imported artifact
+     * @throws ModelerException
+     *         if any problem occurs
+     */
+    public String importFile( final File file,
+                              final String workspaceFolder,
+                              final String workspaceName ) throws ModelerException {
         CheckArg.isNotNull( file, "file" );
-        if ( !file.exists() ) throw new IllegalArgumentException( ModelerI18n.fileNotFound.text( file ) );
         try {
-            final URL url = file.toURI().toURL();
-            return importArtifact( url, url.openStream(), workspaceParentPath );
-        } catch ( final IOException e ) {
+            return importArtifact( file.toURI().toURL(), workspaceFolder, workspaceName );
+        } catch ( final MalformedURLException e ) {
             throw new ModelerException( e );
         }
     }
@@ -237,6 +416,14 @@ public final class Modeler implements AutoCloseable {
      */
     public String modeShapeConfigurationPath() {
         return manager.modeShapeConfigurationPath;
+    }
+    
+    private String name( String workspaceName,
+                         final URL url ) {
+        if ( workspaceName != null && !workspaceName.trim().isEmpty() ) return workspaceName;
+        workspaceName = url.getPath();
+        workspaceName = workspaceName.substring( workspaceName.lastIndexOf( '/' ) + 1 );
+        return workspaceName;
     }
     
     /**
@@ -269,10 +456,35 @@ public final class Modeler implements AutoCloseable {
         } );
     }
     
+    private void removeTemporaryArtifact( final String artifactPath ) throws ModelerException {
+        manager.run( new Task< Void >() {
+            
+            @Override
+            public Void run( final Session session ) throws Exception {
+                session.getNode( artifactPath ).remove();
+                session.save();
+                return null;
+            }
+        } );
+    }
+    
     /**
      * @return the path to the folder that should contain the ModeShape repository store
      */
     public String repositoryStoreParentPath() {
         return System.getProperty( Manager.REPOSITORY_STORE_PARENT_PATH_PROPERTY );
+    }
+    
+    private void saveExternalLocation( final String path,
+                                       final String location ) throws ModelerException {
+        manager.run( new Task< Void >() {
+            
+            @Override
+            public Void run( final Session session ) throws Exception {
+                session.getNode( path ).setProperty( ModelerLexicon.EXTERNAL_LOCATION, location );
+                session.save();
+                return null;
+            }
+        } );
     }
 }

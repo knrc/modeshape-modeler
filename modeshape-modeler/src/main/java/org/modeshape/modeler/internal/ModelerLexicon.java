@@ -29,53 +29,58 @@ package org.modeshape.modeler.internal;
 public interface ModelerLexicon {
     
     /**
-     * The ModeShape modeler namespace prefix. Value is {@value} .
+     * The ModeShape Modeler namespace prefix. Value is {@value} .
      */
-    String NAMESPACE_PREFIX = "mm";
-    
-    /**
-     * The ModeShape modeler namespace prefix with the name separator, a colon character, appended. Value is {@value} .
-     */
-    String NAMESPACE_PREFIX_WITH_SEPARATOR = NAMESPACE_PREFIX + ':';
+    String NAMESPACE_PREFIX = "mm:";
     
     /**
      * The node type name of the dependencies node. This node will have dependency child nodes.
      */
-    String DEPENDENCIES_NODE = NAMESPACE_PREFIX_WITH_SEPARATOR + "dependencies";
+    String DEPENDENCIES_NODE = NAMESPACE_PREFIX + "dependencies";
     
     /**
      * The node type name of a dependency node.
      */
-    String DEPENDENCY_NODE = NAMESPACE_PREFIX_WITH_SEPARATOR + "dependency";
+    String DEPENDENCY_NODE = NAMESPACE_PREFIX + "dependency";
     
     /**
      * The name of the external location property the imported resource was sourced from.
      */
-    String EXTERNAL_LOCATION = NAMESPACE_PREFIX_WITH_SEPARATOR + "externalLocation";
-    
-    /**
-     * The name of the property for the fully qualified path, including name, of the imported artifact.
-     */
-    String ORIGIN_PATH_PROPERTY = NAMESPACE_PREFIX_WITH_SEPARATOR + "origin";
-    
-    /**
-     * The name of a dependency node's derived path property.
-     */
-    String PATH_PROPERTY = NAMESPACE_PREFIX_WITH_SEPARATOR + "path";
+    String EXTERNAL_LOCATION = NAMESPACE_PREFIX + "externalLocation";
     
     /**
      * The mixin type of a model node.
      */
-    String MODEL_MIXIN = NAMESPACE_PREFIX_WITH_SEPARATOR + "model";
+    String MODEL_MIXIN = NAMESPACE_PREFIX + "model";
+    
+    /**
+     * the model type of a model node
+     */
+    String MODEL_TYPE = NAMESPACE_PREFIX + "modelType";
+    
+    /**
+     * The name of the property for the fully qualified path, including name, of the imported artifact.
+     */
+    String ORIGIN_PATH_PROPERTY = NAMESPACE_PREFIX + "origin";
+    
+    /**
+     * The name of a dependency node's derived path property.
+     */
+    String PATH_PROPERTY = NAMESPACE_PREFIX + "path";
     
     /**
      * The name of a dependency node's source reference property.
      */
-    String SOURCE_REFERENCE_PROPERTY = NAMESPACE_PREFIX_WITH_SEPARATOR + "sourceReference";
+    String SOURCE_REFERENCE_PROPERTY = NAMESPACE_PREFIX + "sourceReference";
+    
+    /**
+     * Temporary workspace folder
+     */
+    String TEMP_FOLDER = NAMESPACE_PREFIX + "temp";
     
     /**
      * The mixin for the node where model nodes can be added to.
      */
-    String UNSTRUCTURED_MIXIN = NAMESPACE_PREFIX_WITH_SEPARATOR + "unstructured";
+    String UNSTRUCTURED_MIXIN = NAMESPACE_PREFIX + "unstructured";
     
 }
