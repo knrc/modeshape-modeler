@@ -38,6 +38,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
+import org.mockito.MockitoAnnotations;
 import org.modeshape.modeler.Modeler;
 import org.modeshape.modeler.TestUtil;
 import org.modeshape.modeler.internal.Manager;
@@ -51,6 +52,7 @@ public abstract class BaseTest {
     protected static final String TEST_REPOSITORY_STORE_PARENT_PATH;
     protected static final URL MODEL_TYPE_REPOSITORY;
     
+    protected static final String ARTIFACT_NAME = "artifact";
     protected static final String XML_ROOT = "root";
     protected static final String XML_LEAF = "child";
     protected static final String XML_STRING_VALUE = "string";
@@ -89,6 +91,7 @@ public abstract class BaseTest {
     
     @Before
     public void before() throws Exception {
+        MockitoAnnotations.initMocks( this );
         modeler = new Modeler( TEST_REPOSITORY_STORE_PARENT_PATH, TEST_MODESHAPE_CONFIGURATION_PATH );
         manager = TestUtil.manager( modeler );
         modelTypeManager = ( ModelTypeManagerImpl ) modeler.modelTypeManager();
@@ -116,11 +119,11 @@ public abstract class BaseTest {
             } );
     }
     
-    protected String importArtifact( final String artifactPath ) throws Exception {
-        return modeler.importArtifact( new URL( "file:stuff" ), new ByteArrayInputStream( artifactPath.getBytes() ), null );
+    protected String importArtifact( final String content ) throws Exception {
+        return modeler.importArtifact( stream( content ), ARTIFACT_NAME );
     }
     
-    protected InputStream stream( final String artifactPath ) {
-        return new ByteArrayInputStream( artifactPath.getBytes() );
+    protected InputStream stream( final String content ) {
+        return new ByteArrayInputStream( content.getBytes() );
     }
 }

@@ -23,10 +23,19 @@
  */
 package org.modeshape.modeler;
 
+import java.net.URL;
+
 /**
  * 
  */
 public interface Model extends ModelObject {
+    
+    /**
+     * @return the (last) external location, e.g., on the file system, known to contain a materialized representation of this model.
+     * @throws ModelerException
+     *         if any error occurs
+     */
+    URL externalLocation() throws ModelerException;
     
     /**
      * @return this model's type; never <code>null</code>.

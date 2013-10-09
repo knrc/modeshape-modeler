@@ -53,33 +53,30 @@ public class ITModeler extends BaseIntegrationTest {
                 break;
             }
         }
-        modeler.createModel( path, modelType );
+        final Model model = modeler.generateModel( path, ARTIFACT_NAME, modelType );
+        assertThat( model, notNullValue() );
         manager.run( new Task< Void >() {
             
             @Override
             public Void run( final Session session ) throws Exception {
-                assertThat( session.getNode( path ).hasNode( XSD_MODEL_TYPE_NAME ), is( true ) );
+                assertThat( session.getRootNode().hasNode( ARTIFACT_NAME ), is( true ) );
                 return null;
             }
         } );
     }
     
     @Test( expected = ModelerException.class )
-    public void shouldFailToCreateDefaultModelIfFileIsInvalid() throws Exception {
-        modelTypeManager.install( "xml" );
-        modeler.createDefaultModel( importArtifact( XML_DECLARATION + "<stuff>" ) );
-    }
-    
-    @Test( expected = ModelerException.class )
     public void shouldFailToCreateModelIfFileIsInvalid() throws Exception {
         modelTypeManager.install( "xml" );
-        modeler.createModel( importArtifact( XML_DECLARATION + "<stuff>" ), modelTypeManager.modelTypes().iterator().next() );
+        modeler.generateModel( importArtifact( XML_DECLARATION + "<stuff>" ),
+                               ARTIFACT_NAME,
+                               modelTypeManager.modelTypes().iterator().next() );
     }
     
     @Test( expected = ModelerException.class )
     public void shouldFailToCreateModelIfTypeIsInapplicable() throws Exception {
         modelTypeManager.install( "xml" );
-        modeler.createModel( importArtifact( "stuff" ), modelTypeManager.modelTypes().iterator().next() );
+        modeler.generateModel( importArtifact( "stuff" ), ARTIFACT_NAME, modelTypeManager.modelTypes().iterator().next() );
     }
     
     @Test
@@ -100,7 +97,7 @@ public class ITModeler extends BaseIntegrationTest {
         assertThat( xsdModelType, notNullValue() );
         
         final String path = importArtifact( XSD_ARTIFACT );
-        final ModelImpl model = ( ModelImpl ) modeler.createModel( path, xsdModelType );
+        final ModelImpl model = ( ModelImpl ) modeler.generateModel( path, ARTIFACT_NAME, xsdModelType );
         modeler.manager.run( new Task< Void >() {
             
             @Override

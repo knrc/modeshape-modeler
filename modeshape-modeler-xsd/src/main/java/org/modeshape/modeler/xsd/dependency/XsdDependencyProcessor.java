@@ -150,7 +150,8 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
                 }
                 
                 // create dependency node
-                final Node dependencyNode = dependenciesNode.addNode( ModelerLexicon.DEPENDENCY_NODE, ModelerLexicon.DEPENDENCY_NODE );
+                final Node dependencyNode =
+                    dependenciesNode.addNode( ModelerLexicon.DEPENDENCY_NODE, ModelerLexicon.DEPENDENCY_NODE );
                 
                 // set input property
                 final Property locationProp = kid.getProperty( SCHEMA_LOCATION );
@@ -223,7 +224,7 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
         CheckArg.isNotNull( modelNode, "modelNode" );
         
         try {
-            return MODEL_ID.equals( modelNode.getName() );
+            return MODEL_ID.equals( modelNode.getProperty( ModelerLexicon.MODEL_TYPE ).getString() );
         } catch ( final Exception e ) {
             throw new ModelerException( e );
         }

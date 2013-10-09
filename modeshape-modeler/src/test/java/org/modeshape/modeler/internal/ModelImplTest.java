@@ -41,7 +41,7 @@ import org.modeshape.modeler.test.BaseTest;
 @SuppressWarnings( "javadoc" )
 public class ModelImplTest extends BaseTest {
     
-    private static final String ARTIFACT_NAME = "artifact";
+    private static final String MODEL_NAME = "model";
     
     private Model model;
     
@@ -55,8 +55,8 @@ public class ModelImplTest extends BaseTest {
         super.before();
         modelTypeManager.registerModelTypeRepository( MODEL_TYPE_REPOSITORY );
         modelTypeManager.install( "xml" );
-        final String path = modeler.importArtifact( new URL( "File:" + ARTIFACT_NAME ), stream( XML_ARTIFACT ), null );
-        model = modeler.createModel( path, modelTypeManager.modelType( XML_MODEL_TYPE_NAME ) );
+        final String path = modeler.importArtifact( stream( XML_ARTIFACT ), ARTIFACT_NAME );
+        model = modeler.generateModel( path, MODEL_NAME, modelTypeManager.modelType( XML_MODEL_TYPE_NAME ) );
         assertThat( model, notNullValue() );
     }
     
@@ -220,10 +220,11 @@ public class ModelImplTest extends BaseTest {
     }
     
     @Test
-    public void shouldGetMinimumPropertyValuesByNameMapIfNoProperties() throws Exception {
-        final Map< String, Object > propertyValuesByName = model.propertyValuesByName();
-        assertThat( propertyValuesByName, notNullValue() );
-        assertThat( propertyValuesByName.size(), is( 1 ) );
+    public void shouldGetExternalLocation() throws Exception {
+        model = modeler.generateModel( new URL( "file:src/test/resources/Books.xsd" ),
+                                       null,
+                                       modelTypeManager.modelType( XML_MODEL_TYPE_NAME ) );
+        assertThat( model, notNullValue() );
     }
     
     @Test
@@ -231,7 +232,7 @@ public class ModelImplTest extends BaseTest {
         final String[] types = model.mixinTypes();
         assertThat( types, notNullValue() );
         assertThat( types.length > 0, is( true ) );
-        assertThat( types[ 0 ], is( "mm:model" ) ); // TODO replace with lexicon value
+        assertThat( types[ 0 ], is( ModelerLexicon.MODEL_MIXIN ) );
     }
     
     @Test
@@ -243,7 +244,12 @@ public class ModelImplTest extends BaseTest {
     
     @Test
     public void shouldGetName() throws Exception {
-        assertThat( model.name(), is( ARTIFACT_NAME ) );
+        assertThat( model.name(), is( MODEL_NAME ) );
+    }
+    
+    @Test
+    public void shouldGetNullExternalLocation() throws Exception {
+        assertThat( model.externalLocation(), nullValue() );
     }
     
     @Test
@@ -267,8 +273,15 @@ public class ModelImplTest extends BaseTest {
     }
     
     @Test
+    public void shouldGetOnlyReservedPropertyValuesByNameIfNoModelProperties() throws Exception {
+        final Map< String, Object > propertyValuesByName = model.propertyValuesByName();
+        assertThat( propertyValuesByName, notNullValue() );
+        assertThat( propertyValuesByName.size(), is( 1 ) );
+    }
+    
+    @Test
     public void shouldGetPath() {
-        assertThat( model.path(), is( '/' + ARTIFACT_NAME + '/' + XML_MODEL_TYPE_NAME ) );
+        assertThat( model.path(), is( '/' + MODEL_NAME ) );
     }
     
     @Test

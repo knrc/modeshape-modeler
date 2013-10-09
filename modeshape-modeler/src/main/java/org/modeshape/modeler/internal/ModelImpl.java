@@ -23,6 +23,9 @@
  */
 package org.modeshape.modeler.internal;
 
+import java.net.URL;
+
+import javax.jcr.Node;
 import javax.jcr.Session;
 
 import org.modeshape.modeler.Model;
@@ -48,25 +51,33 @@ public class ModelImpl extends ModelObjectImpl implements Model {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.modeler.Model#modelType()
+     * @see org.modeshape.modeler.Model#externalLocation()
      */
     @Override
-    public ModelType modelType() throws ModelerException {
-        return manager.modelTypeManager.modelType( super.name() );
+    public URL externalLocation() throws ModelerException {
+        return manager.run( new Task< URL >() {
+            
+            @Override
+            public URL run( final Session session ) throws Exception {
+                final Node model = session.getNode( path );
+                return model.hasProperty( ModelerLexicon.EXTERNAL_LOCATION ) ? new URL( model.getProperty( ModelerLexicon.EXTERNAL_LOCATION ).getString() )
+                                                                            : null;
+            }
+        } );
     }
     
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.modeler.ModelObject#name()
+     * @see org.modeshape.modeler.Model#modelType()
      */
     @Override
-    public String name() throws ModelerException {
-        return manager.run( new Task< String >() {
+    public ModelType modelType() throws ModelerException {
+        return manager.run( new Task< ModelType >() {
             
             @Override
-            public String run( final Session session ) throws Exception {
-                return session.getNode( path ).getParent().getName();
+            public ModelType run( final Session session ) throws Exception {
+                return manager.modelTypeManager.modelType( session.getNode( path ).getProperty( ModelerLexicon.MODEL_TYPE ).getString() );
             }
         } );
     }

@@ -26,6 +26,7 @@ package org.modeshape.modeler.internal;
 import java.util.concurrent.ExecutionException;
 
 import javax.jcr.Node;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 
@@ -113,7 +114,11 @@ public final class Manager {
      */
     public Node artifactNode( final Session session,
                               final String filePath ) throws Exception {
-        return session.getNode( filePath.charAt( 0 ) == '/' ? filePath : '/' + filePath );
+        try {
+            return session.getNode( filePath.charAt( 0 ) == '/' ? filePath : '/' + filePath );
+        } catch ( final PathNotFoundException e ) {
+            throw new IllegalArgumentException( e );
+        }
     }
     
     /**
