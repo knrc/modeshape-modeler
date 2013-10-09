@@ -159,8 +159,8 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
                 dependencyNode.setProperty( ModelerLexicon.SOURCE_REFERENCE_PROPERTY, new String[] { location } );
                 LOGGER.debug( "Setting dependency source reference property to '%s'", location );
                 
-                // derive path using model node's parent path as starting point
-                Node node = modelNode.getParent();
+                // derive path using model node path as starting point
+                Node node = modelNode;
                 String path = normalizePath( location );
                 boolean exists = false;
                 
@@ -169,26 +169,31 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
                         if ( path.startsWith( PARENT_PATH ) ) {
                             // if root node there is no parent
                             if ( node.getDepth() == 0 ) {
-                                throw new ModelerException( XsdModelerI18n.relativePathNotValid, modelNode.getName() );
+                                throw new ModelerException( XsdModelerI18n.relativePathNotValid, path, modelNode.getName() );
                             }
                             
                             node = node.getParent();
-                            path = path.substring( path.indexOf( PARENT_PATH + '/' ) );
+                            path = path.substring( ( PARENT_PATH + '/' ).length() );
                         } else {
-                            path = path.substring( path.indexOf( SELF_PATH + '/' ) );
+                            path = path.substring( ( SELF_PATH + '/' ).length() );
                         }
                     }
                     
-                    if ( path.startsWith( "/" ) ) {
-                        path = path.substring( 1 );
+                    // insert parent path
+                    String parentPath = node.getPath();
+                    
+                    if ( !parentPath.endsWith( "/" ) ) {
+                        parentPath += "/";
                     }
                     
-                    exists = node.hasNode( path );
+                    path = parentPath + path;
                 } else {
                     // TODO need more path analysis to include the original path property
-                    final Node rootNode = ( Node ) node.getAncestor( 0 );
-                    exists = rootNode.hasNode( path );
                 }
+                
+                // strip off leading slash to make path relative
+                exists = rootNode( node ).hasNode( path.substring( 1 ) );
+                LOGGER.debug( "Path '%s' exists '%s'", path, exists );
                 
                 dependencyNode.setProperty( ModelerLexicon.PATH_PROPERTY, path );
                 LOGGER.debug( "Setting dependency path property to '%s'", path );
@@ -228,6 +233,10 @@ public final class XsdDependencyProcessor implements DependencyProcessor, XsdLex
         } catch ( final Exception e ) {
             throw new ModelerException( e );
         }
+    }
+    
+    private Node rootNode( final Node node ) throws Exception {
+        return ( Node ) node.getAncestor( 0 );
     }
     
     private void uploadMissingDependencies( final List< String > paths,

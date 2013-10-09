@@ -59,11 +59,6 @@ public interface ModelerLexicon {
     String MODEL_TYPE = NAMESPACE_PREFIX + "modelType";
     
     /**
-     * The name of the property for the fully qualified path, including name, of the imported artifact.
-     */
-    String ORIGIN_PATH_PROPERTY = NAMESPACE_PREFIX + "origin";
-    
-    /**
      * The name of a dependency node's derived path property.
      */
     String PATH_PROPERTY = NAMESPACE_PREFIX + "path";
