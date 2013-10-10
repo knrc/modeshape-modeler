@@ -24,9 +24,7 @@
 package org.modeshape.modeler.internal;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 import javax.jcr.Node;
@@ -34,7 +32,6 @@ import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
-import javax.jcr.PropertyType;
 import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
@@ -61,10 +58,17 @@ public class ModelObjectImpl implements ModelObject {
      */
     public final String path;
     
+    /**
+     * 
+     */
+    public final int index;
+    
     ModelObjectImpl( final Manager manager,
-                     final String path ) {
+                     final String path,
+                     final int index ) {
         this.manager = manager;
         this.path = path;
+        this.index = index;
     }
     
     /**
@@ -142,7 +146,7 @@ public class ModelObjectImpl implements ModelObject {
             @Override
             public ModelObject run( final Session session ) throws Exception {
                 try {
-                    return new ModelObjectImpl( manager, session.getNode( path ).getNode( childName ).getPath() );
+                    return new ModelObjectImpl( manager, session.getNode( path ).getNode( childName ).getPath(), 0 );
                 } catch ( final PathNotFoundException e ) {
                     return null;
                 }
@@ -163,6 +167,31 @@ public class ModelObjectImpl implements ModelObject {
     /**
      * {@inheritDoc}
      * 
+     * @see org.modeshape.modeler.ModelObject#children()
+     */
+    @Override
+    public ModelObject[] children() throws ModelerException {
+        return manager.run( new Task< ModelObject[] >() {
+            
+            @Override
+            public ModelObject[] run( final Session session ) throws Exception {
+                return children( session.getNode( path ).getNodes() );
+            }
+        } );
+    }
+    
+    ModelObject[] children( final NodeIterator iterator ) throws Exception {
+        final ModelObject[] children = new ModelObject[ ( int ) iterator.getSize() ];
+        for ( int ndx = 0; iterator.hasNext(); ndx++ ) {
+            final Node child = iterator.nextNode();
+            children[ ndx ] = new ModelObjectImpl( manager, child.getPath(), child.getIndex() - 1 );
+        }
+        return children;
+    }
+    
+    /**
+     * {@inheritDoc}
+     * 
      * @see org.modeshape.modeler.ModelObject#children(java.lang.String)
      */
     @Override
@@ -172,37 +201,7 @@ public class ModelObjectImpl implements ModelObject {
             
             @Override
             public ModelObject[] run( final Session session ) throws Exception {
-                final NodeIterator iter = session.getNode( path ).getNodes( childName );
-                final ModelObject[] obj = new ModelObject[ ( int ) iter.getSize() ];
-                for ( int ndx = 0; iter.hasNext(); ndx++ )
-                    obj[ ndx ] = new ModelObjectImpl( manager, iter.nextNode().getPath() );
-                return obj;
-            }
-        } );
-    }
-    
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.modeler.ModelObject#childrenByName()
-     */
-    @Override
-    public Map< String, List< ModelObject > > childrenByName() throws ModelerException {
-        return manager.run( new Task< Map< String, List< ModelObject > > >() {
-            
-            @Override
-            public Map< String, List< ModelObject > > run( final Session session ) throws Exception {
-                final Map< String, List< ModelObject > > childrenByName = new HashMap<>();
-                for ( final NodeIterator iter = session.getNode( path ).getNodes(); iter.hasNext(); ) {
-                    final Node node = iter.nextNode();
-                    List< ModelObject > modelObjects = childrenByName.get( node.getName() );
-                    if ( modelObjects == null ) {
-                        modelObjects = new ArrayList<>();
-                        childrenByName.put( node.getName(), modelObjects );
-                    }
-                    modelObjects.add( new ModelObjectImpl( manager, node.getPath() ) );
-                }
-                return childrenByName;
+                return children( session.getNode( path ).getNodes( childName ) );
             }
         } );
     }
@@ -221,11 +220,81 @@ public class ModelObjectImpl implements ModelObject {
     /**
      * {@inheritDoc}
      * 
+     * @see org.modeshape.modeler.ModelObject#hasChild(java.lang.String)
+     */
+    @Override
+    public boolean hasChild( final String childName ) throws ModelerException {
+        CheckArg.isNotEmpty( childName, "childName" );
+        return manager.run( new Task< Boolean >() {
+            
+            @Override
+            public Boolean run( final Session session ) throws Exception {
+                return session.getNode( path ).hasNode( childName );
+            }
+        } );
+    }
+    
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.modeler.ModelObject#hasChildren()
+     */
+    @Override
+    public boolean hasChildren() throws ModelerException {
+        return manager.run( new Task< Boolean >() {
+            
+            @Override
+            public Boolean run( final Session session ) throws Exception {
+                return session.getNode( path ).hasNodes();
+            }
+        } );
+    }
+    
+    /**
+     * {@inheritDoc}
+     * 
      * @see java.lang.Object#hashCode()
      */
     @Override
     public int hashCode() {
         return Objects.hash( path );
+    }
+    
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.modeler.ModelObject#hasProperties()
+     */
+    @Override
+    public boolean hasProperties() throws ModelerException {
+        return propertyNames().length > 0;
+    }
+    
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.modeler.ModelObject#hasProperty(java.lang.String)
+     */
+    @Override
+    public boolean hasProperty( final String propertyName ) throws ModelerException {
+        CheckArg.isNotEmpty( propertyName, "propertyName" );
+        return manager.run( new Task< Boolean >() {
+            
+            @Override
+            public Boolean run( final Session session ) throws Exception {
+                return session.getNode( path ).hasProperty( propertyName );
+            }
+        } );
+    }
+    
+    /**
+     * {@inheritDoc}
+     * 
+     * @see org.modeshape.modeler.ModelObject#index()
+     */
+    @Override
+    public int index() {
+        return index;
     }
     
     /**
@@ -398,45 +467,21 @@ public class ModelObjectImpl implements ModelObject {
     /**
      * {@inheritDoc}
      * 
-     * @see org.modeshape.modeler.ModelObject#propertyValuesByName()
+     * @see org.modeshape.modeler.ModelObject#propertyNames()
      */
     @Override
-    public Map< String, Object > propertyValuesByName() throws ModelerException {
-        return manager.run( new Task< Map< String, Object > >() {
+    public String[] propertyNames() throws ModelerException {
+        return manager.run( new Task< String[] >() {
             
             @Override
-            public Map< String, Object > run( final Session session ) throws Exception {
-                final Map< String, Object > valsByName = new HashMap<>();
+            public String[] run( final Session session ) throws Exception {
+                final List< String > names = new ArrayList<>();
                 for ( final PropertyIterator iter = session.getNode( path ).getProperties(); iter.hasNext(); ) {
-                    final Property prop = iter.nextProperty();
-                    if ( prop.getName().startsWith( JcrLexicon.Namespace.PREFIX ) ||
-                         prop.getName().startsWith( ModelerLexicon.NAMESPACE_PREFIX ) ) continue;
-                    final Object val;
-                    switch ( prop.getType() ) {
-                        case PropertyType.LONG: {
-                            if ( prop.isMultiple() ) {
-                                final List< Long > list = new ArrayList<>();
-                                for ( final Value listVal : prop.getValues() )
-                                    list.add( listVal.getLong() );
-                                val = list;
-                            }
-                            else val = prop.getLong();
-                            break;
-                        }
-                        default: {
-                            if ( prop.isMultiple() ) {
-                                final List< String > list = new ArrayList<>();
-                                for ( final Value listVal : prop.getValues() )
-                                    list.add( listVal.getString() );
-                                val = list;
-                            }
-                            else val = prop.getString();
-                            break;
-                        }
-                    }
-                    valsByName.put( prop.getName(), val );
+                    final String name = iter.nextProperty().getName();
+                    if ( !name.startsWith( JcrLexicon.Namespace.PREFIX ) && !name.startsWith( ModelerLexicon.NAMESPACE_PREFIX ) )
+                        names.add( name );
                 }
-                return valsByName;
+                return names.toArray( new String[ names.size() ] );
             }
         } );
     }

@@ -45,7 +45,7 @@ public class ModelImpl extends ModelObjectImpl implements Model {
      */
     public ModelImpl( final Manager manager,
                       final String modelPath ) {
-        super( manager, modelPath );
+        super( manager, modelPath, -1 );
     }
     
     /**

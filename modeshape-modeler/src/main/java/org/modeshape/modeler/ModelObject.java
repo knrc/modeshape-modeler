@@ -23,9 +23,6 @@
  */
 package org.modeshape.modeler;
 
-import java.util.List;
-import java.util.Map;
-
 /**
  * 
  */
@@ -47,7 +44,7 @@ public interface ModelObject {
     
     /**
      * @param propertyName
-     *        the name of one of this model object's multi-valued properties
+     *        the name of one of this model object's properties
      * @return the Boolean values of the supplied property, or <code>null</code> if the property doesn't exist
      * @throws ModelerException
      *         if any error occurs
@@ -73,20 +70,57 @@ public interface ModelObject {
     boolean childHasSameNameSiblings( String childName ) throws ModelerException;
     
     /**
+     * @return the child model objects of this model object
+     * @throws ModelerException
+     *         if any error occurs
+     */
+    ModelObject[] children() throws ModelerException;
+    
+    /**
      * @param childName
      *        the name of one of this model object's children
-     * @return the child model objects with the supplied name
+     * @return the child model objects of this model object with the supplied name
      * @throws ModelerException
      *         if any error occurs
      */
     ModelObject[] children( String childName ) throws ModelerException;
     
     /**
-     * @return the map of children by name for this model object; never <code>null</code>.
+     * @param childName
+     *        the name of one of this model object's children
+     * @return <code>true</code> if this model object has a child with the supplied name
      * @throws ModelerException
      *         if any error occurs
      */
-    Map< String, List< ModelObject > > childrenByName() throws ModelerException;
+    boolean hasChild( String childName ) throws ModelerException;
+    
+    /**
+     * @return <code>true</code> if this model object has children
+     * @throws ModelerException
+     *         if any error occurs
+     */
+    boolean hasChildren() throws ModelerException;
+    
+    /**
+     * @return <code>true</code> if this model object has properties
+     * @throws ModelerException
+     *         if any error occurs
+     */
+    boolean hasProperties() throws ModelerException;
+    
+    /**
+     * @param propertyName
+     *        the name of one of this model object's properties
+     * @return <code>true</code> if this model object has the a property with the supplied name
+     * @throws ModelerException
+     *         if any error occurs
+     */
+    boolean hasProperty( String propertyName ) throws ModelerException;
+    
+    /**
+     * @return this model object's 0-based index relative to any other same-name-siblings, or -1 if this is a model
+     */
+    int index();
     
     /**
      * @param propertyName
@@ -99,7 +133,7 @@ public interface ModelObject {
     
     /**
      * @param propertyName
-     *        the name of one of this model object's multi-valued properties
+     *        the name of one of this model object's properties
      * @return the Long values of the supplied property, or <code>null</code> if the property doesn't exist
      * @throws ModelerException
      *         if any error occurs
@@ -144,18 +178,18 @@ public interface ModelObject {
     /**
      * @param propertyName
      *        the name of one of this model object's properties
-     * @return <code>true</code> if the supplied property has multiple values
+     * @return <code>true</code> if the supplied property exists and has multiple values
      * @throws ModelerException
      *         if any error occurs
      */
     boolean propertyHasMultipleValues( String propertyName ) throws ModelerException;
     
     /**
-     * @return the map of property values by name for this model object; never <code>null</code>.
+     * @return the property names for this model object; never <code>null</code>.
      * @throws ModelerException
      *         if any error occurs
      */
-    Map< String, Object > propertyValuesByName() throws ModelerException;
+    String[] propertyNames() throws ModelerException;
     
     /**
      * @param propertyName
@@ -168,7 +202,7 @@ public interface ModelObject {
     
     /**
      * @param propertyName
-     *        the name of one of this model object's multi-valued properties
+     *        the name of one of this model object's properties
      * @return the String values of the supplied property, or <code>null</code> if the property doesn't exist
      * @throws ModelerException
      *         if any error occurs
